@@ -12,14 +12,10 @@ async function startServer() {
   const app = express();
   app.use(express.json());
 
-  // Gemini API setup
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || "",
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
-    }
+  // DeepSeek API setup
+  const ai = new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY || "",
+    baseURL: "https://api.deepseek.com",
   });
 
   // API Routes
