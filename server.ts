@@ -89,7 +89,7 @@ async function startServer() {
   app.post("/api/ai/generate-report", async (req, res) => {
     try {
       const { courseData, timeframe } = req.body;
-      
+
       const prompt = `Genera un reporte profesional de salud del curso basado en esta data para el periodo: ${timeframe}.
       Data: ${JSON.stringify(courseData)}
       El reporte debe estar en formato Markdown, ser muy profesional, en ESPAÑOL, e incluir las siguientes secciones:
@@ -100,12 +100,13 @@ async function startServer() {
       - Logros Principales
       - Desafíos y Recomendaciones`;
 
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt
+      const result = await ai.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 1,
       });
-      
-      res.json({ report: result.text });
+
+      res.json({ report: result.choices[0].message.content });
     } catch (error: any) {
       console.error("AI Report Generation Error:", error);
       res.status(500).json({ error: error.message });
