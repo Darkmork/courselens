@@ -26,22 +26,23 @@ async function startServer() {
   app.post("/api/ai/analyze-risk", async (req, res) => {
     try {
       const { studentData } = req.body;
-      
+
       const prompt = `Analiza la siguiente data de estudiantes y entrega una evaluación de riesgo en formato JSON.
       Data: ${JSON.stringify(studentData)}
-      Retorna un JSON con: 
+      Retorna un JSON con:
       - riskStatus: "Rojo" | "Amarillo" | "Verde"
       - contributingFactors: string (escrito en español)
       - recommendedInterventions: string (escrito en español)
       - reasoning: string (escrito en español)`;
 
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt
+      const result = await ai.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 1,
       });
-      
-      const text = result.text || "";
-      
+
+      const text = result.choices[0].message.content || "";
+
       // Basic JSON extraction from markdown if necessary
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
