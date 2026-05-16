@@ -59,13 +59,13 @@ async function startServer() {
   app.post("/api/ai/summarize-student", async (req, res) => {
     try {
       const { studentData } = req.body;
-      
+
       const prompt = `Genera un resumen completo y profesional del estudiante para prepararse para una entrevista con los apoderados (padres/tutores).
-      
+
       Datos del Estudiante:
       ${JSON.stringify(studentData)}
-      
-      El resumen debe estar en español y en formato Markdown. 
+
+      El resumen debe estar en español y en formato Markdown.
       Estructura sugerida:
       - Resumen General y Contexto
       - Fortalezas y Logros
@@ -73,12 +73,13 @@ async function startServer() {
       - Puntos a conversar recomendados para la reunión
       - Tono sugerido para la entrevista`;
 
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt
+      const result = await ai.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 1,
       });
-      
-      res.json({ summary: result.text });
+
+      res.json({ summary: result.choices[0].message.content });
     } catch (error: any) {
       console.error("AI Summarize Error:", error);
       res.status(500).json({ error: error.message });
