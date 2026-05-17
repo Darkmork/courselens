@@ -43,6 +43,47 @@ async function getPdfjs() {
 }
 
 /**
+ * Extract text lines from PDF, preserving layout using Y-coordinates
+ * Groups text items by vertical position (Y-coordinate)
+ * @param textContent PDF text content object
+ * @returns Array of text lines in reading order
+ */
+function extractLinesFromPDF(textContent: any): string[] {
+  const items = textContent.items;
+
+  // Group items by Y-position (with tolerance for slight variations)
+  const tolerance = 2; // pixels
+  const lineMap = new Map<number, Array<{ text: string; x: number }>>();
+
+  for (const item of items) {
+    if (!item.str) continue;
+
+    // Round Y to nearest tolerance to group items on same line
+    const yKey = Math.round(item.y / tolerance) * tolerance;
+    if (!lineMap.has(yKey)) {
+      lineMap.set(yKey, []);
+    }
+    lineMap.get(yKey)!.push({ text: item.str, x: item.x || 0 });
+  }
+
+  // Sort lines by Y position (descending, since PDF coordinates are top-down)
+  const sortedYs = Array.from(lineMap.keys()).sort((a, b) => b - a);
+
+  // Build lines by sorting items within each line by X position
+  const lines: string[] = [];
+  for (const y of sortedYs) {
+    const lineItems = lineMap.get(y)!;
+    lineItems.sort((a, b) => a.x - b.x);
+    const lineText = lineItems.map(item => item.text).join(' ');
+    if (lineText.trim()) {
+      lines.push(lineText);
+    }
+  }
+
+  return lines;
+}
+
+/**
  * Parse a PULSO.cl group PDF report
  * Extracts a summary table with all students and their relation counts
  * @param pdfBuffer Buffer containing the PDF file data
@@ -61,16 +102,14 @@ export async function parseGroupPDF(
 
   // Load the PDF from the buffer
   const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
-  let fullText = '';
+  const lines_final: string[] = [];
 
-  // Extract text from all pages
+  // Extract text from all pages using layout-aware parsing
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ');
-    fullText += pageText + '\n';
+    const pageLines = extractLinesFromPDF(textContent);
+    lines_final.push(...pageLines);
   }
 
   const students: string[] = [];
@@ -84,30 +123,10 @@ export async function parseGroupPDF(
     'convivencia_negativa',
   ];
 
-  // Split by " [0-9]+ [0-9]+ [0-9]+ [0-9]+" pattern to find student rows
-  // Since students list consists of "NAME 1 2 3 4", we can split on this pattern
-  const lines = fullText.split(/\s+/);
-
-  // Rebuild lines by finding student rows (name followed by 4 numbers)
-  const reconstructedLines: string[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    // If current and next 5 items match "Word Word Digit Digit Digit Digit", it's a student row
-    if (i + 5 < lines.length &&
-        lines[i].match(/^[A-Z]/) && lines[i+1].match(/^[A-Z]/) &&
-        lines[i+2].match(/^\d+$/) && lines[i+3].match(/^\d+$/) &&
-        lines[i+4].match(/^\d+$/) && lines[i+5].match(/^\d+$/)) {
-      reconstructedLines.push([lines[i], lines[i+1], lines[i+2], lines[i+3], lines[i+4], lines[i+5]].join(' '));
-      i += 5; // Skip the next 5 items
-    } else {
-      reconstructedLines.push(lines[i]);
-    }
-  }
-
-  const lines_final = reconstructedLines;
-
   // Track line index to parse table structure
   let parsingTable = false;
   const tableRows: { studentName: string; counts: number[] }[] = [];
+  let tableHeaderFound = false;
 
   for (let i = 0; i < lines_final.length; i++) {
     const line = lines_final[i].trim();
@@ -115,12 +134,14 @@ export async function parseGroupPDF(
     // Skip empty lines
     if (!line) continue;
 
-    // Detect table start by finding header keywords
-    if (
+    // Detect table start by finding relation type keywords
+    if (!tableHeaderFound && (
       line.match(/trabajo.*positivo|convivencia.*positiva/i) ||
       line.match(/trabajo.*negativo|convivencia.*negativa/i)
-    ) {
+    )) {
       parsingTable = true;
+      tableHeaderFound = true;
+      console.debug('Found table header in group PDF');
       continue;
     }
 
@@ -128,7 +149,7 @@ export async function parseGroupPDF(
     if (parsingTable) {
       // Match Spanish names (capitalized first and last name, optionally middle)
       const nameMatch = line.match(
-        /^([A-Z][a-záéíóúüñ]+\s+[A-Z][a-záéíóúüñ]+(?:\s+[A-Z][a-záéíóúüñ]+)?)/
+        /^([A-Z][a-záéíóúüñ]+(?:\s+[A-Z][a-záéíóúüñ]+)+)/
       );
 
       if (nameMatch) {
@@ -137,53 +158,53 @@ export async function parseGroupPDF(
         // Filter out common non-student names
         if (
           !studentName.match(
-            /^\s*(Estudiante|Total|Reporte|Grupal|Relaciones|Datos|Tabla)/i
+            /^\s*(Estudiante|Total|Reporte|Grupal|Relaciones|Datos|Tabla|Resumen|Escala)/i
           )
         ) {
           // Ensure uniqueness
           if (!students.includes(studentName)) {
             students.push(studentName);
           }
-        }
 
-        // Extract numbers following the student name (relation counts)
-        const numberMatches = line.match(/\d+/g);
-        if (numberMatches && numberMatches.length >= 4) {
-          const counts = numberMatches.slice(0, 4).map(Number);
-
-          tableRows.push({
-            studentName,
-            counts,
-          });
+          // Extract numbers following the student name (relation counts)
+          const numberMatches = line.match(/\d+/g);
+          if (numberMatches && numberMatches.length >= 4) {
+            const counts = numberMatches.slice(0, 4).map(Number);
+            tableRows.push({ studentName, counts });
+            console.debug(`Found table row: ${studentName} with counts [${counts.join(', ')}]`);
+          }
         }
       }
 
-      // Stop parsing table when we hit non-table content
+      // Stop parsing table when we hit obvious non-table content
       if (
         line.match(/^\w+\s*:/) &&
-        !line.match(/^([A-Z][a-záéíóúüñ]+\s+[A-Z][a-záéíóúüñ]+)/)
+        !line.match(/^([A-Z][a-záéíóúüñ]+\s+[A-Z])/)
       ) {
         parsingTable = false;
       }
     }
   }
 
+  console.debug(`Extracted ${students.length} students from group PDF table`);
+
   // Build relations from table rows
-  // Assumption: each row represents "from" student, columns represent "to" students
-  for (let fromIdx = 0; fromIdx < tableRows.length; fromIdx++) {
-    const fromRow = tableRows[fromIdx];
-
-    // For each relation type column
+  // Each row represents counts for a "from" student across different relation types
+  // Counts indicate strength of relationships (1-3 typically, but clamp to max 3)
+  for (const fromRow of tableRows) {
     for (let typeIdx = 0; typeIdx < relationTypes.length; typeIdx++) {
-      const count = fromRow.counts[typeIdx] || 0;
+      const count = Math.min(3, Math.max(1, fromRow.counts[typeIdx] || 0));
 
-      if (count > 0) {
-        // If there are multiple students, relate to others
-        // Otherwise, create self-relations for data completeness
-        if (students.length > 1 && fromIdx < students.length - 1) {
+      if (count > 0 && students.length > 1) {
+        // Create relations to other students based on count
+        // For simplicity: if count > 0, create relation to next student in list
+        // In a real scenario, the PDF would have a full relation matrix
+        const fromIdx = students.indexOf(fromRow.studentName);
+        if (fromIdx >= 0 && fromIdx < students.length - 1) {
+          const toStudent = students[fromIdx + 1];
           relations.push({
             from: fromRow.studentName,
-            to: students[(fromIdx + 1) % students.length],
+            to: toStudent,
             tipo: relationTypes[typeIdx],
             count,
           });
@@ -192,6 +213,7 @@ export async function parseGroupPDF(
     }
   }
 
+  console.debug(`Extracted ${relations.length} relations from group PDF`);
   return { students, relations };
 }
 
@@ -337,48 +359,71 @@ export async function parseIndividualPDF(
   const uint8Array = new Uint8Array(pdfBuffer);
 
   const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
-  let fullText = '';
+  const lines: string[] = [];
 
-  // Extract text from all pages
+  // Extract text from all pages using layout-aware parsing
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ');
-    fullText += pageText + '\n';
+    const pageLines = extractLinesFromPDF(textContent);
+    lines.push(...pageLines);
   }
 
-  // Find all student names (capitalized Spanish names)
-  const studentPattern =
-    /([A-Z][a-záéíóúüñ]+\s+[A-Z][a-záéíóúüñ]+(?:\s+[A-Z][a-záéíóúüñ]+)?)/g;
-  const matches = Array.from(fullText.matchAll(studentPattern));
+  // Join lines with newlines to preserve structure
+  const fullText = lines.join('\n');
 
+  // Find student sections by looking for student names at the start of lines
+  // followed by their data (autoreporte, menciones, etc.)
   const students: StudentSociogramData[] = [];
+  const seenNames = new Set<string>();
 
-  for (let i = 0; i < matches.length; i++) {
-    const studentName = matches[i][1].trim();
+  // Look for lines that start with a student name
+  const studentNamePattern = /^([A-Z][a-záéíóúüñ]+\s+[A-Z][a-záéíóúüñ]+(?:\s+[A-Z][a-záéíóúüñ]+)?)\s*$/;
 
-    // Skip common non-student names (e.g., headers, sections)
-    // More comprehensive filter to exclude phrases that aren't individual students
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const nameMatch = line.match(studentNamePattern);
+
+    if (!nameMatch) continue;
+
+    const studentName = nameMatch[1].trim();
+
+    // Skip common non-student names
     if (
       studentName.match(
         /^\s*(Informe|Reporte|Individual|Report|Sociograma|Tabla|Total|Estudiante|Autoreporte|Menciones|Relaciones|Datos|Detallados)/i
       ) ||
-      studentName.match(/^[A-Z][a-záéíóúüñ]+\s+(Positiv|Saludable|Desafío|Responde)/i)
+      seenNames.has(studentName)
     ) {
       continue;
     }
 
-    // Extract section from current match to next match (or end of text)
-    const startIndex = matches[i].index + matches[i][0].length;
-    const endIndex =
-      i < matches.length - 1 ? matches[i + 1].index : fullText.length;
-    const sectionText = fullText.substring(startIndex, endIndex);
+    seenNames.add(studentName);
 
-    // Parse the student section
-    const studentData = extractStudentSection(studentName, sectionText);
-    students.push(studentData);
+    // Extract section from current line to next student or end
+    let nextStudentIndex = lines.length;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].match(studentNamePattern)) {
+        nextStudentIndex = j;
+        break;
+      }
+    }
+
+    const sectionLines = lines.slice(i, nextStudentIndex);
+    const sectionText = sectionLines.join('\n');
+
+    // Only add if section has meaningful content (autoreporte or menciones)
+    if (sectionText.match(/autoreporte|menci[oó]n/i)) {
+      const studentData = extractStudentSection(studentName, sectionText);
+      students.push(studentData);
+      console.debug(`Parsed student: ${studentName}`);
+    }
+  }
+
+  if (students.length === 0) {
+    console.warn('No students found in individual PDF. Check document structure.');
+  } else {
+    console.debug(`Successfully parsed ${students.length} students from individual PDF`);
   }
 
   return students;
