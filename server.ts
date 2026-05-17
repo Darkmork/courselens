@@ -4,7 +4,7 @@ import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local" });
+dotenv.config();
 
 const API_PORT = 3000;
 
