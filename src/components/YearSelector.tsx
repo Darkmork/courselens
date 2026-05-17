@@ -14,8 +14,16 @@ export function YearSelector({
   onYearChange,
   availableYears = DEFAULT_YEARS
 }: YearSelectorProps) {
-  const years = availableYears.sort((a, b) => a - b);
-  const currentIndex = years.indexOf(selectedYear);
+  // Fix Issue 2: Use immutable sort to avoid mutating the prop
+  const years = [...availableYears].sort((a, b) => a - b);
+
+  // Fix Issue 3: Handle edge case where selectedYear is not in availableYears
+  let currentIndex = years.indexOf(selectedYear);
+  if (currentIndex === -1) {
+    console.warn(`YearSelector: selectedYear ${selectedYear} not found in availableYears [${years.join(', ')}], defaulting to ${years[0]}`);
+    currentIndex = 0;
+  }
+
   const canGoBack = currentIndex > 0;
   const canGoNext = currentIndex < years.length - 1;
 
@@ -37,26 +45,26 @@ export function YearSelector({
       <button
         onClick={goToPrevious}
         disabled={!canGoBack}
-        className="p-2 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded transition"
-        aria-label="Año anterior"
+        className="p-2 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed rounded transition"
+        aria-label="Ir al año anterior"
         title="Año anterior"
       >
-        <ChevronLeft className="h-5 w-5 text-gray-600" />
+        <ChevronLeft className="h-5 w-5 text-neutral-400" />
       </button>
 
       {/* Year Tabs */}
-      <div className="flex gap-2 bg-white rounded-lg border border-gray-200 p-1">
+      <div className="flex gap-2 bg-neutral-900 rounded-lg border border-white/10 p-1">
         {years.map((year) => (
           <button
-            key={year}
+            key={`year-${year}`}
             onClick={() => onYearChange(year)}
             className={`px-4 py-2 rounded font-medium transition ${
               selectedYear === year
                 ? 'bg-blue-600 text-white'
-                : 'text-gray-700 hover:bg-gray-100'
+                : 'text-neutral-300 hover:bg-neutral-800'
             }`}
-            aria-label={`Sociograma ${year}`}
-            aria-current={selectedYear === year ? 'page' : undefined}
+            aria-label={`Año ${year}`}
+            aria-pressed={selectedYear === year}
           >
             {year}
           </button>
@@ -67,11 +75,11 @@ export function YearSelector({
       <button
         onClick={goToNext}
         disabled={!canGoNext}
-        className="p-2 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded transition"
-        aria-label="Año siguiente"
+        className="p-2 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed rounded transition"
+        aria-label="Ir al año siguiente"
         title="Año siguiente"
       >
-        <ChevronRight className="h-5 w-5 text-gray-600" />
+        <ChevronRight className="h-5 w-5 text-neutral-400" />
       </button>
     </div>
   );
