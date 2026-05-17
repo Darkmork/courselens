@@ -93,6 +93,69 @@ export interface Observation {
   category: Category;
 }
 
+export interface StudentSociogramData {
+  id: string;
+  nombre: string;
+  rol: 'Líder Positivo' | 'Saludable' | 'Desafío' | 'No responde';
+  autoreporte: {
+    bienestar_general: number;
+    aprendizaje: number;
+    relaciones_interpersonales: number;
+    autogestion_academica: number;
+    inclusion: number;
+  };
+  menciones_positivas: {
+    relaciones_compartir: number;
+    relaciones_trabajar: number;
+    ayuda_demas: number;
+    valor_respeto: number;
+    valor_vocacion: number;
+    valor_sencillez: number;
+    valor_espiritu_comunitario: number;
+    valor_responsabilidad: number;
+    valor_verdad: number;
+    liderazgo: number;
+    trata_bien_incluye: number;
+    resuelve_conflictos: number;
+    total: number;
+  };
+  menciones_negativas: {
+    relaciones_negativas_compartir: number;
+    siente_solo: number;
+    pasandolo_mal: number;
+    relaciones_negativas_trabajar: number;
+    molesta_otros: number;
+    total: number;
+  };
+  comentarios: {
+    positivos: string | null;
+    negativos: string | null;
+  };
+}
+
+export interface SociogramRelation {
+  id?: string;
+  from_id: string;
+  to_id: string;
+  tipo: 'trabajo_positivo' | 'convivencia_positiva' | 'trabajo_negativo' | 'convivencia_negativa';
+  fuerza: number;
+}
+
+export interface SociogramMetrics {
+  cohesion: number;
+  fragmentacion: number;
+  liderazgo_promedio: number;
+  aislamiento_promedio: number;
+}
+
+export interface SociogramData {
+  year: number;
+  courseId: string;
+  estudiantes: StudentSociogramData[];
+  relaciones: SociogramRelation[];
+  metricas: SociogramMetrics;
+}
+
 export interface Conflict {
   id: string;
   courseId: string;
