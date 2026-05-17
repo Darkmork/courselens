@@ -88,29 +88,32 @@ const Students: React.FC = () => {
     setIsImporting(true);
     try {
       const parsedData = await parseFile(file);
-      
+
       let importedCount = 0;
       for (const row of parsedData) {
-        if (!row['Nombre'] || !row['RUT']) continue;
+        const nombre = row['Nombre']?.toString().trim();
+        const rut = row['RUT']?.toString().trim();
+
+        if (!nombre || !rut) continue;
 
         const newStudent = {
-          name: row['Nombre'],
-          rut: row['RUT'],
-          dateOfBirth: row['Fecha de Nacimiento'] || '',
-          email: row['Email'] || '',
-          phone: row['Teléfono'] || '',
-          address: row['Dirección'] || '',
-          guardian1Name: row['Nombre Apoderado 1'] || '',
-          guardian1Relation: row['Parentesco Apo. 1'] || '',
-          guardian1Email: row['Email Apo. 1'] || '',
-          guardian1Phone: row['Teléfono Apo. 1'] || '',
-          guardian2Name: row['Nombre Apoderado 2'] || '',
-          guardian2Relation: row['Parentesco Apo. 2'] || '',
-          guardian2Email: row['Email Apo. 2'] || '',
-          guardian2Phone: row['Teléfono Apo. 2'] || '',
-          familySituation: row['Situación Familiar'] || '',
-          externalSupport: row['Apoyo Externo'] || '',
-          medicalAlerts: row['Alertas Médicas'] || '',
+          name: nombre,
+          rut: rut,
+          dateOfBirth: (row['Fecha de Nacimiento'] || '').toString().trim(),
+          email: (row['Email'] || '').toString().trim(),
+          phone: (row['Teléfono'] || '').toString().trim(),
+          address: (row['Dirección'] || '').toString().trim(),
+          guardian1Name: (row['Nombre Apoderado 1'] || '').toString().trim(),
+          guardian1Relation: (row['Parentesco Apo. 1'] || '').toString().trim(),
+          guardian1Email: (row['Email Apo. 1'] || '').toString().trim(),
+          guardian1Phone: (row['Teléfono Apo. 1'] || '').toString().trim(),
+          guardian2Name: (row['Nombre Apoderado 2'] || '').toString().trim(),
+          guardian2Relation: (row['Parentesco Apo. 2'] || '').toString().trim(),
+          guardian2Email: (row['Email Apo. 2'] || '').toString().trim(),
+          guardian2Phone: (row['Teléfono Apo. 2'] || '').toString().trim(),
+          familySituation: (row['Situación Familiar'] || '').toString().trim(),
+          externalSupport: (row['Apoyo Externo'] || '').toString().trim(),
+          medicalAlerts: (row['Alertas Médicas'] || '').toString().trim(),
           courseId: 'default-course',
           riskStatus: RiskStatus.GREEN,
           relationalRole: RelationalRole.HEALTHY,
@@ -123,7 +126,7 @@ const Students: React.FC = () => {
         });
         importedCount++;
       }
-      
+
       alert(`Importación completada. Se importaron ${importedCount} estudiantes.`);
       setIsImportModalOpen(false);
     } catch (error) {
