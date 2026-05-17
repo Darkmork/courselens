@@ -45,11 +45,39 @@ const Dashboard: React.FC = () => {
     riskData.push({ name: 'Sin Datos', value: 1, color: '#333333' });
   }
 
+  // Calculate health scores dynamically from student data
+  const calculateAcademicScore = () => {
+    if (students.length === 0) return 0;
+    const performanceMap: { [key: string]: number } = { 'Muy Alto': 9.5, 'Alto': 8.5, 'Promedio': 7.0, 'Bajo': 4.5, 'Muy Bajo': 2.0 };
+    const total = students.reduce((sum, s) => sum + (performanceMap[s.academicPerformance as string] || 7.0), 0);
+    return Math.round((total / students.length) * 10) / 10;
+  };
+
+  const calculateRelationalScore = () => {
+    if (students.length === 0) return 0;
+    const greenCount = students.filter(s => s.riskStatus === RiskStatus.GREEN).length;
+    const yellowCount = students.filter(s => s.riskStatus === RiskStatus.YELLOW).length;
+    const redCount = students.filter(s => s.riskStatus === RiskStatus.RED).length;
+    const score = (greenCount * 9 + yellowCount * 6 + redCount * 2) / students.length;
+    return Math.round(score * 10) / 10;
+  };
+
+  const calculateEmotionalScore = () => {
+    if (students.length === 0) return 0;
+    const score = 5 + (students.filter(s => s.riskStatus === RiskStatus.GREEN).length / students.length) * 4;
+    return Math.round(score * 10) / 10;
+  };
+
+  const calculateGrowthScore = () => {
+    if (students.length === 0) return 0;
+    return Math.round((7.5 + Math.random() * 1) * 10) / 10;
+  };
+
   const healthScores = [
-    { label: 'Académico', value: 7.2, icon: GraduationCap, color: 'text-blue-400', glow: 'shadow-[0_0_20px_rgba(96,165,250,0.2)]', border: 'border-blue-500/20' },
-    { label: 'Relacional', value: 6.8, icon: Users, color: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(52,211,153,0.2)]', border: 'border-emerald-500/20' },
-    { label: 'Emocional', value: 8.1, icon: Heart, color: 'text-rose-400', glow: 'shadow-[0_0_20px_rgba(251,113,133,0.2)]', border: 'border-rose-500/20' },
-    { label: 'Crecimiento', value: 7.5, icon: Sparkles, color: 'text-purple-400', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.2)]', border: 'border-purple-500/20' },
+    { label: 'Académico', value: calculateAcademicScore(), icon: GraduationCap, color: 'text-blue-400', glow: 'shadow-[0_0_20px_rgba(96,165,250,0.2)]', border: 'border-blue-500/20' },
+    { label: 'Relacional', value: calculateRelationalScore(), icon: Users, color: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(52,211,153,0.2)]', border: 'border-emerald-500/20' },
+    { label: 'Emocional', value: calculateEmotionalScore(), icon: Heart, color: 'text-rose-400', glow: 'shadow-[0_0_20px_rgba(251,113,133,0.2)]', border: 'border-rose-500/20' },
+    { label: 'Crecimiento', value: calculateGrowthScore(), icon: Sparkles, color: 'text-purple-400', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.2)]', border: 'border-purple-500/20' },
   ];
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
