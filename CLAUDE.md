@@ -15,6 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **AI:** Google Gemini 1.5 Flash (integrated server-side via `@google/genai`)
 - **Visualization:** Cytoscape.js (sociogram), Recharts (analytics), Lucide icons
 - **Data:** PapaParse (CSV), xlsx, FileSaver (exports)
+- **PDF Parsing:** pdfjs-dist (text extraction), pdf-parse (server-side)
+- **File Upload:** express-fileupload (multipart form data)
 
 ## Commands
 
@@ -30,9 +32,14 @@ npm run clean        # Remove dist/ and server.js
 
 ### Frontend Structure
 - `src/pages/` — Main page components (Dashboard, Students, Sociogram, Conflicts, CourseLife, Spiritual, Projects)
+  - **Sociogram** — Relational network visualization with real Firestore data, YearSelector for multi-year navigation
+  - **ImportSociogram** — PDF upload form for PULSO.cl group + individual reports
 - `src/components/` — Reusable UI components (Login, Layout, Logo)
+  - **YearSelector** — Year navigation tabs (2024-2027) with prev/next buttons
 - `src/lib/firebase.ts` — Firebase client configuration
-- `src/types/index.ts` — TypeScript type definitions
+- `src/lib/pulsoParser.ts` — PDF text extraction for PULSO.cl reports (parseGroupPDF, parseIndividualPDF)
+- `src/lib/sociogramMetrics.ts` — Metric calculation (cohesion, fragmentation, leadership, isolation)
+- `src/types/index.ts` — TypeScript type definitions (StudentSociogramData, SociogramRelation, SociogramMetrics, SociogramData)
 - `src/utils/` — Helper functions (CSV parsing, etc.)
 
 ### Backend (server.ts)
@@ -41,6 +48,10 @@ Express server handling:
 - `/api/ai/analyze-risk` — Student risk assessment via Gemini
 - `/api/ai/summarize-student` — Parent meeting summary generation
 - `/api/ai/generate-report` — Course health report generation
+- **`POST /api/import/sociogram`** — PULSO.cl PDF import (multipart file upload)
+  - Accepts: groupPdf, individualPdf, year, courseId
+  - Returns: studentCount, relationCount, metrics (cohesion, fragmentation, leadership, isolation)
+  - Saves to `sociogram_${year}/${courseId}` collection
 - Vite middleware in dev, static serving in production
 
 ### Database (Firestore)
@@ -50,6 +61,12 @@ Collections defined in `firebase-blueprint.json`:
 - **observations** — Teacher narrative notes
 - **conflicts** — Incident tracking and resolution
 - **agreements** — Student commitments with deadlines
+
+**Sociogram Collections** (PULSO.cl integration):
+- **sociogram_2025, sociogram_2026, ...** — Multi-year relational network data
+  - Document key: `courseId`
+  - Fields: `year`, `estudiantes[]`, `relaciones[]`, `metricas{cohesion, fragmentacion, liderazgo_promedio, aislamiento_promedio}`
+  - Source: Imported from PULSO.cl group + individual reports
 
 Security rules in `firestore.rules` enforce auth and teacher-based access control.
 
@@ -78,9 +95,23 @@ The app runs on `http://0.0.0.0:3000` by default.
 - `tsconfig.json` targets ES2022, uses "bundler" module resolution, enables JSX
 - No emit (type-check only), isolated modules for faster builds
 
+## PULSO.cl Sociogram Integration
+
+The Sociogram feature has been enhanced with real data import from PULSO.cl platform:
+
+**User Flow:**
+1. Teacher uploads PULSO.cl group + individual PDF reports
+2. Backend parses PDFs, extracts student relationships and metrics
+3. Data stored in Firestore (sociogram_2025, sociogram_2026, etc.)
+4. Sociogram page displays real network visualization with year selector
+5. Multi-year comparison shows how course dynamics change over time
+
+**Known Issue:** PDF text extraction (parseGroupPDF, parseIndividualPDF) needs layout-aware parsing. Current regex-based approach fails with continuous text streams. **TODO:** Implement pdf-parse backend or Y-position-based text reconstruction for accurate student/relation extraction.
+
 ## Development Notes
 
 - The app is primarily built for AI Studio (a visual IDE) but runs standalone locally
 - Some environment behaviors are disabled during agent edits (HMR, file watching) via `DISABLE_HMR` env var
 - All CSS is utility-first Tailwind; custom styles in `src/index.css`
 - AI responses are parsed as JSON or Markdown depending on the endpoint
+- Firestore listeners (onSnapshot) are used for real-time data updates; always clean up subscriptions in useEffect return
