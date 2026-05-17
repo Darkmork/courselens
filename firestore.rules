@@ -68,5 +68,12 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update, delete: if isSignedIn();
     }
+
+    // --- Sociogram Data (Multi-year) ---
+    // Allow server to write imported PULSO.cl data without user auth
+    match /sociogram_{year}/{courseId} {
+      allow read: if isSignedIn();
+      allow write: if true; // Server writes via Admin SDK (no user auth required)
+    }
   }
 }
