@@ -188,6 +188,8 @@ async function startServer() {
 
       // Build relations from group and individual data
       const relaciones: SociogramRelation[] = [];
+      const allowedTipos = ['trabajo_positivo', 'convivencia_positiva', 'trabajo_negativo', 'convivencia_negativa'];
+
       for (const groupRel of groupRelations) {
         const fromStudent = individualStudents.find(
           (s) => s.nombre.toLowerCase().trim() === groupRel.from.toLowerCase().trim()
@@ -197,12 +199,22 @@ async function startServer() {
         );
 
         if (fromStudent && toStudent) {
+          // Validate tipo value before using it
+          if (!allowedTipos.includes(groupRel.tipo)) {
+            console.warn(`Skipping invalid relation type: ${groupRel.tipo}`);
+            continue;
+          }
+
           relaciones.push({
             from_id: fromStudent.id,
             to_id: toStudent.id,
-            tipo: groupRel.tipo as any,
-            fuerza: Math.min(3, groupRel.count), // Clamp to 1-3
+            tipo: groupRel.tipo as SociogramRelation['tipo'],
+            fuerza: Math.max(1, Math.min(3, groupRel.count)), // Clamp to 1-3 range
           });
+        } else {
+          // Log which students caused the skip
+          if (!fromStudent) console.debug(`Relation skipped: Student "${groupRel.from}" not found in individual PDF`);
+          if (!toStudent) console.debug(`Relation skipped: Student "${groupRel.to}" not found in individual PDF`);
         }
       }
 
@@ -212,6 +224,14 @@ async function startServer() {
       const metricas = calculateMetrics({
         estudiantes: individualStudents,
         relaciones,
+      });
+
+      // Log calculated metrics for debugging
+      console.debug('Calculated metrics:', {
+        cohesion: metricas.cohesion.toFixed(2),
+        fragmentacion: metricas.fragmentacion.toFixed(1) + '%',
+        liderazgo_promedio: metricas.liderazgo_promedio.toFixed(2),
+        aislamiento_promedio: metricas.aislamiento_promedio.toFixed(1) + '%',
       });
 
       // Build final SociogramData
