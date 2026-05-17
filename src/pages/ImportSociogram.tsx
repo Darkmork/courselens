@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
 
 interface ImportSummary {
@@ -15,6 +15,8 @@ interface ImportSociogramProps {
   onBack?: () => void;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   courseId = 'course-1',
   onBack
@@ -22,33 +24,54 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   const [groupPdf, setGroupPdf] = useState<File | null>(null);
   const [individualPdf, setIndividualPdf] = useState<File | null>(null);
   const [year, setYear] = useState<string>('2025');
-  const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState<string>('');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
 
+  // File input refs for resetting
+  const groupPdfInputRef = useRef<HTMLInputElement>(null);
+  const individualPdfInputRef = useRef<HTMLInputElement>(null);
+
   const handleGroupPdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
-      setGroupPdf(file);
-      setImportStatus('idle');
-      setImportMessage('');
-    } else {
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
       setImportStatus('error');
       setImportMessage('Por favor selecciona un archivo PDF válido para el reporte grupal');
+      return;
     }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setImportStatus('error');
+      setImportMessage('El archivo es demasiado grande (máximo 10MB)');
+      return;
+    }
+
+    setGroupPdf(file);
+    setImportStatus('idle');
+    setImportMessage('');
   };
 
   const handleIndividualPdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
-      setIndividualPdf(file);
-      setImportStatus('idle');
-      setImportMessage('');
-    } else {
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
       setImportStatus('error');
       setImportMessage('Por favor selecciona un archivo PDF válido para el reporte individual');
+      return;
     }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setImportStatus('error');
+      setImportMessage('El archivo es demasiado grande (máximo 10MB)');
+      return;
+    }
+
+    setIndividualPdf(file);
+    setImportStatus('idle');
+    setImportMessage('');
   };
 
   const handleImport = async (e: React.FormEvent) => {
@@ -60,7 +83,6 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
       return;
     }
 
-    setIsImporting(true);
     setImportStatus('loading');
     setImportMessage('Cargando y analizando PDFs...');
 
@@ -97,8 +119,6 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
       setImportStatus('error');
       setImportMessage(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
       console.error('Import error:', error);
-    } finally {
-      setIsImporting(false);
     }
   };
 
@@ -108,6 +128,10 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
     setImportStatus('idle');
     setImportMessage('');
     setImportSummary(null);
+
+    // Clear file inputs
+    if (groupPdfInputRef.current) groupPdfInputRef.current.value = '';
+    if (individualPdfInputRef.current) individualPdfInputRef.current.value = '';
   };
 
   return (
@@ -119,6 +143,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
             <button
               onClick={onBack}
               className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
+              aria-label="Volver a sociograma"
               title="Volver"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -137,7 +162,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
             <select
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              disabled={isImporting}
+              disabled={importStatus === 'loading'}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <option value="2024">2024</option>
@@ -154,12 +179,13 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
             </label>
             <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
+                ref={groupPdfInputRef}
                 type="file"
                 accept=".pdf"
                 onChange={handleGroupPdfChange}
                 className="hidden"
                 id="groupPdf"
-                disabled={isImporting}
+                disabled={importStatus === 'loading'}
               />
               <label htmlFor="groupPdf" className="cursor-pointer block">
                 <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
@@ -181,12 +207,13 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
             </label>
             <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
+                ref={individualPdfInputRef}
                 type="file"
                 accept=".pdf"
                 onChange={handleIndividualPdfChange}
                 className="hidden"
                 id="individualPdf"
-                disabled={isImporting}
+                disabled={importStatus === 'loading'}
               />
               <label htmlFor="individualPdf" className="cursor-pointer block">
                 <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
@@ -233,10 +260,11 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={isImporting || !groupPdf || !individualPdf}
+              disabled={importStatus === 'loading' || !groupPdf || !individualPdf}
+              aria-label="Importar sociograma"
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             >
-              {isImporting ? (
+              {importStatus === 'loading' ? (
                 <>
                   <Loader className="h-4 w-4 animate-spin" />
                   Importando...
@@ -248,6 +276,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
             <button
               type="button"
               onClick={handleReset}
+              aria-label="Limpiar formulario"
               className="px-4 py-3 border border-gray-600 rounded-lg font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-all duration-200"
             >
               Limpiar
