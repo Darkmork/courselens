@@ -1,0 +1,72 @@
+import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from './lib/firebase';
+import Login from './components/Login';
+import Landing from './pages/Landing';
+import Dashboard from './pages/Dashboard';
+import Students from './pages/Students';
+import Sociogram from './pages/Sociogram';
+import Conflicts from './pages/Conflicts';
+import CourseLife from './pages/CourseLife';
+import Spiritual from './pages/Spiritual';
+import Projects from './pages/Projects';
+import { Layout } from './components/Layout';
+
+export type Page = 'dashboard' | 'students' | 'sociogram' | 'conflicts' | 'course-life' | 'spiritual' | 'projects';
+
+export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [showLogin, setShowLogin] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    if (showLogin) {
+      return <Login onBack={() => setShowLogin(false)} />;
+    }
+    return <Landing onLoginClick={() => setShowLogin(true)} />;
+  }
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'students':
+        return <Students />;
+      case 'sociogram':
+        return <Sociogram />;
+      case 'conflicts':
+        return <Conflicts />;
+      case 'course-life':
+        return <CourseLife />;
+      case 'spiritual':
+        return <Spiritual />;
+      case 'projects':
+        return <Projects />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  return (
+    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+      {renderPage()}
+    </Layout>
+  );
+}

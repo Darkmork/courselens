@@ -1,0 +1,8 @@
+{
+  "name": "ClassSphere",
+  "description": "Unified virtual assistant for integrated course management, tracking academic, relational, and emotional student health.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

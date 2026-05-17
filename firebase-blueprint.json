@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Information about a student in a course.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "courseId": { "type": "string" },
+        "name": { "type": "string" },
+        "rut": { "type": "string" },
+        "dateOfBirth": { "type": "string", "format": "date" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "guardian1Name": { "type": "string" },
+        "guardian1Relation": { "type": "string" },
+        "guardian1Email": { "type": "string", "format": "email" },
+        "guardian1Phone": { "type": "string" },
+        "guardian2Name": { "type": "string" },
+        "guardian2Relation": { "type": "string" },
+        "guardian2Email": { "type": "string", "format": "email" },
+        "guardian2Phone": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "familySituation": { "type": "string" },
+        "externalSupport": { "type": "string" },
+        "medicalAlerts": { "type": "string" },
+        "disciplinaryMeasures": { "type": "string" },
+        "relationalRole": { "type": "string", "enum": ["Leader", "Isolated", "Healthy", "In Conflict"] },
+        "cohortGroup": { "type": "string" },
+        "riskStatus": { "type": "string", "enum": ["Red", "Yellow", "Green"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "courseId", "name", "rut"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "An educational course managed by a teacher.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "name": { "type": "string" },
+        "year": { "type": "integer" },
+        "healthScores": {
+          "type": "object",
+          "properties": {
+            "academic": { "type": "number" },
+            "relational": { "type": "number" },
+            "emotional": { "type": "number" },
+            "spiritual": { "type": "number" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Observation": {
+      "title": "Observation",
+      "description": "A teacher observation about a student.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "text": { "type": "string" },
+        "category": { "type": "string", "enum": ["Academic", "Behavioral", "Relational", "Emotional"] }
+      }
+    },
+    "Conflict": {
+      "title": "Conflict",
+      "description": "A conflict between students.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "courseId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "description": { "type": "string" },
+        "severity": { "type": "string", "enum": ["Low", "Medium", "High"] },
+        "status": { "type": "string", "enum": ["Open", "In Progress", "Resolved"] },
+        "studentIds": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "Agreement": {
+      "title": "Agreement",
+      "description": "An agreement or commitment made with a student or family.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "text": { "type": "string" },
+        "dueDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["Pending", "Completed", "Not Honored", "Overdue"] }
+      }
+    }
+  },
+  "firestore": {
+    "courses": {
+      "schema": "Course",
+      "description": "Collecton of courses."
+    },
+    "students": {
+      "schema": "Student",
+      "description": "Global collection of students (sharded by courseId for queries)."
+    },
+    "observations": {
+      "schema": "Observation",
+      "description": "Collecton of observations."
+    },
+    "conflicts": {
+      "schema": "Conflict",
+      "description": "Collection of conflicts."
+    },
+    "agreements": {
+      "schema": "Agreement",
+      "description": "Collection of agreements."
+    }
+  }
+}
