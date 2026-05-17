@@ -3,6 +3,12 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import fileUpload from "express-fileupload";
+import { setDoc, doc } from "firebase/firestore";
+import { parseGroupPDF, parseIndividualPDF } from "./src/lib/pulsoParser";
+import { calculateMetrics } from "./src/lib/sociogramMetrics";
+import type { SociogramData, SociogramRelation } from "./src/types/index";
+import { db } from "./src/lib/firebase";
 
 dotenv.config();
 
@@ -11,6 +17,13 @@ const API_PORT = 3000;
 async function startServer() {
   const app = express();
   app.use(express.json());
+  app.use(
+    fileUpload({
+      limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+      abortOnLimit: true,
+      responseOnLimit: "File size exceeds 50MB limit",
+    })
+  );
 
   // DeepSeek API setup
   const ai = new OpenAI({
@@ -110,6 +123,124 @@ async function startServer() {
     } catch (error: any) {
       console.error("AI Report Generation Error:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/import/sociogram - Import PULSO.cl sociogram PDFs
+  app.post("/api/import/sociogram", async (req, res) => {
+    try {
+      // Validate file uploads
+      if (!req.files || !req.files.groupPdf || !req.files.individualPdf) {
+        return res.status(400).json({
+          error: "Both groupPdf and individualPdf are required",
+          status: "validation_failed",
+        });
+      }
+
+      const { year, courseId } = req.body;
+      if (!year || !courseId) {
+        return res.status(400).json({
+          error: "year and courseId are required in request body",
+          status: "validation_failed",
+        });
+      }
+
+      const groupPdfFile = req.files.groupPdf as fileUpload.UploadedFile;
+      const individualPdfFile = req.files.individualPdf as fileUpload.UploadedFile;
+
+      console.log(`Importing sociogram for course ${courseId}, year ${year}`);
+
+      // Parse PDFs
+      const { students: groupStudents, relations: groupRelations } = await parseGroupPDF(
+        groupPdfFile.data
+      );
+      const individualStudents = await parseIndividualPDF(
+        individualPdfFile.data
+      );
+
+      console.log(
+        `Parsed ${groupStudents.length} students from group PDF, ${individualStudents.length} from individual PDF`
+      );
+
+      // Validate: all students in individual must be in group
+      const groupStudentSet = new Set(
+        groupStudents.map((s) => s.toLowerCase().trim())
+      );
+      for (const student of individualStudents) {
+        if (
+          !groupStudentSet.has(student.nombre.toLowerCase().trim())
+        ) {
+          return res.status(400).json({
+            error: `Student "${student.nombre}" found in individual PDF but not in group PDF`,
+            status: "validation_failed",
+          });
+        }
+      }
+
+      // Build relations from group and individual data
+      const relaciones: SociogramRelation[] = [];
+      for (const groupRel of groupRelations) {
+        const fromStudent = individualStudents.find(
+          (s) => s.nombre.toLowerCase().trim() === groupRel.from.toLowerCase().trim()
+        );
+        const toStudent = individualStudents.find(
+          (s) => s.nombre.toLowerCase().trim() === groupRel.to.toLowerCase().trim()
+        );
+
+        if (fromStudent && toStudent) {
+          relaciones.push({
+            from_id: fromStudent.id,
+            to_id: toStudent.id,
+            tipo: groupRel.tipo as any,
+            fuerza: Math.min(3, groupRel.count), // Clamp to 1-3
+          });
+        }
+      }
+
+      console.log(`Created ${relaciones.length} relations`);
+
+      // Calculate metrics
+      const metricas = calculateMetrics({
+        estudiantes: individualStudents,
+        relaciones,
+      });
+
+      // Build final SociogramData
+      const sociogramData: SociogramData = {
+        year: parseInt(year),
+        courseId,
+        estudiantes: individualStudents,
+        relaciones,
+        metricas,
+      };
+
+      // Save to Firestore
+      const docRef = doc(db, `sociogram_${year}`, courseId);
+      await setDoc(docRef, sociogramData);
+
+      console.log(
+        `Successfully saved sociogram for course ${courseId} at sociogram_${year}/${courseId}`
+      );
+
+      // Return success response
+      res.json({
+        success: true,
+        message: `Sociograma ${year} imported successfully`,
+        summary: {
+          year: parseInt(year),
+          courseId,
+          studentCount: individualStudents.length,
+          relationCount: relaciones.length,
+          metrics: metricas,
+        },
+      });
+    } catch (error) {
+      console.error("Error importing sociogram:", error);
+      res.status(500).json({
+        error: "Failed to import sociogram",
+        details: error instanceof Error ? error.message : String(error),
+        status: "error",
+      });
     }
   });
 
