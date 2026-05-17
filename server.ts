@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
 import { setDoc, doc } from "firebase/firestore";
-import { parseGroupPDF, parseIndividualPDF } from "./src/lib/pulsoParser";
+import { parseGroupPDFWithDeepSeek } from "./src/lib/pulsoParser";
 import { calculateMetrics } from "./src/lib/sociogramMetrics";
 import type { SociogramData, SociogramRelation } from "./src/types/index";
 import { db } from "./src/lib/firebase";
@@ -135,13 +135,13 @@ async function startServer() {
     }
   });
 
-  // POST /api/import/sociogram - Import PULSO.cl sociogram PDFs
+  // POST /api/import/sociogram - Import PULSO.cl group sociogram PDF
   app.post("/api/import/sociogram", async (req, res) => {
     try {
-      // Validate file uploads
-      if (!req.files || !req.files.groupPdf || !req.files.individualPdf) {
+      // Validate file upload
+      if (!req.files || !req.files.groupPdf) {
         return res.status(400).json({
-          error: "Both groupPdf and individualPdf are required",
+          error: "groupPdf is required",
           status: "validation_failed",
         });
       }
@@ -155,66 +155,52 @@ async function startServer() {
       }
 
       const groupPdfFile = req.files.groupPdf as fileUpload.UploadedFile;
-      const individualPdfFile = req.files.individualPdf as fileUpload.UploadedFile;
 
       console.log(`Importing sociogram for course ${courseId}, year ${year}`);
 
-      // Parse PDFs
-      const { students: groupStudents, relations: groupRelations } = await parseGroupPDF(
-        groupPdfFile.data
-      );
-      const individualStudents = await parseIndividualPDF(
-        individualPdfFile.data
-      );
+      // Parse group PDF using DeepSeek to extract table data
+      const parseResult = await parseGroupPDFWithDeepSeek(groupPdfFile.data);
+      const { studentData, relations: rawRelations } = parseResult;
 
-      console.log(
-        `Parsed ${groupStudents.length} students from group PDF, ${individualStudents.length} from individual PDF`
-      );
+      console.log(`Parsed ${studentData.length} students from group PDF via DeepSeek`);
 
-      // Validate: all students in individual must be in group
-      const groupStudentSet = new Set(
-        groupStudents.map((s) => s.toLowerCase().trim())
-      );
-      for (const student of individualStudents) {
-        if (
-          !groupStudentSet.has(student.nombre.toLowerCase().trim())
-        ) {
-          return res.status(400).json({
-            error: `Student "${student.nombre}" found in individual PDF but not in group PDF`,
-            status: "validation_failed",
-          });
-        }
-      }
+      // Convert studentData to StudentSociogramData format with IDs
+      const estudiantes = studentData.map((student: any) => ({
+        id: student.nombre
+          .replace(/\s+/g, '-')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[̀-ͯ]/g, ''),
+        nombre: student.nombre,
+        rol: student.rol || 'No responde',
+        autoreporte: student.autoreporte,
+        menciones_positivas: student.menciones_positivas,
+        menciones_negativas: student.menciones_negativas,
+        comentarios: {
+          positivos: null,
+          negativos: null,
+        },
+      }));
 
-      // Build relations from group and individual data
+      // Build relations from parsed data
       const relaciones: SociogramRelation[] = [];
       const allowedTipos = ['trabajo_positivo', 'convivencia_positiva', 'trabajo_negativo', 'convivencia_negativa'];
 
-      for (const groupRel of groupRelations) {
-        const fromStudent = individualStudents.find(
-          (s) => s.nombre.toLowerCase().trim() === groupRel.from.toLowerCase().trim()
+      for (const rel of rawRelations) {
+        const fromStudent = estudiantes.find(
+          (s: any) => s.nombre.toLowerCase().trim() === rel.from.toLowerCase().trim()
         );
-        const toStudent = individualStudents.find(
-          (s) => s.nombre.toLowerCase().trim() === groupRel.to.toLowerCase().trim()
+        const toStudent = estudiantes.find(
+          (s: any) => s.nombre.toLowerCase().trim() === rel.to.toLowerCase().trim()
         );
 
-        if (fromStudent && toStudent) {
-          // Validate tipo value before using it
-          if (!allowedTipos.includes(groupRel.tipo)) {
-            console.warn(`Skipping invalid relation type: ${groupRel.tipo}`);
-            continue;
-          }
-
+        if (fromStudent && toStudent && allowedTipos.includes(rel.tipo)) {
           relaciones.push({
             from_id: fromStudent.id,
             to_id: toStudent.id,
-            tipo: groupRel.tipo as SociogramRelation['tipo'],
-            fuerza: Math.max(1, Math.min(3, groupRel.count)), // Clamp to 1-3 range
+            tipo: rel.tipo as SociogramRelation['tipo'],
+            fuerza: Math.max(1, Math.min(3, rel.count)),
           });
-        } else {
-          // Log which students caused the skip
-          if (!fromStudent) console.debug(`Relation skipped: Student "${groupRel.from}" not found in individual PDF`);
-          if (!toStudent) console.debug(`Relation skipped: Student "${groupRel.to}" not found in individual PDF`);
         }
       }
 
@@ -222,7 +208,7 @@ async function startServer() {
 
       // Calculate metrics
       const metricas = calculateMetrics({
-        estudiantes: individualStudents,
+        estudiantes,
         relaciones,
       });
 
@@ -238,7 +224,7 @@ async function startServer() {
       const sociogramData: SociogramData = {
         year: parseInt(year),
         courseId,
-        estudiantes: individualStudents,
+        estudiantes,
         relaciones,
         metricas,
       };
@@ -258,7 +244,7 @@ async function startServer() {
         summary: {
           year: parseInt(year),
           courseId,
-          studentCount: individualStudents.length,
+          studentCount: estudiantes.length,
           relationCount: relaciones.length,
           metrics: metricas,
         },

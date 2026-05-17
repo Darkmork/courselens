@@ -428,3 +428,166 @@ export async function parseIndividualPDF(
 
   return students;
 }
+
+/**
+ * Parse PULSO.cl group PDF using DeepSeek Vision/Chat to extract table data
+ * Converts PDF text to structured student data via AI interpretation
+ * @param pdfBuffer Buffer containing the PDF file data
+ * @returns Promise with students array and relations array
+ */
+export async function parseGroupPDFWithDeepSeek(
+  pdfBuffer: Buffer
+): Promise<{
+  students: string[];
+  relations: Array<{ from: string; to: string; tipo: string; count: number }>;
+  studentData: Array<{
+    nombre: string;
+    autoreporte: { bienestar_general: number; aprendizaje: number; relaciones_interpersonales: number; autogestion_academica: number; inclusion: number };
+    menciones_positivas: Record<string, number>;
+    menciones_negativas: Record<string, number>;
+    rol: string;
+  }>;
+}> {
+  const pdfjs = await getPdfjs();
+  const uint8Array = new Uint8Array(pdfBuffer);
+
+  const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
+  const lines_final: string[] = [];
+
+  // Extract text from all pages
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageLines = extractLinesFromPDF(textContent);
+    lines_final.push(...pageLines);
+  }
+
+  const fullText = lines_final.join('\n');
+
+  // Call DeepSeek to interpret the table
+  const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+  if (!deepseekApiKey) {
+    throw new Error('DEEPSEEK_API_KEY environment variable is not set');
+  }
+
+  const prompt = `You are a PULSO.cl sociogram data parser. Below is extracted text from a PULSO.cl group report PDF table.
+
+Your task: Extract all student data from this table and return valid JSON (no markdown, just raw JSON).
+
+IMPORTANT: The table contains columns for:
+- Student name
+- Autoreporte (5 fields: bienestar_general, aprendizaje, relaciones_interpersonales, autogestion_academica, inclusion) - values 1-5
+- Menciones Positivas (14 categories)
+- Menciones Negativas (5 categories)
+- Student role (Líder Positivo, Saludable, Desafío, No responde)
+- Relations (work/coexistence positive/negative mentions between students)
+
+Return this JSON structure (no markdown, just JSON):
+{
+  "estudiantes": [
+    {
+      "nombre": "string",
+      "autoreporte": {
+        "bienestar_general": number,
+        "aprendizaje": number,
+        "relaciones_interpersonales": number,
+        "autogestion_academica": number,
+        "inclusion": number
+      },
+      "menciones_positivas": {
+        "relaciones_compartir": number,
+        "relaciones_trabajar": number,
+        "ayuda_demas": number,
+        "valor_respeto": number,
+        "valor_vocacion": number,
+        "valor_sencillez": number,
+        "valor_espiritu_comunitario": number,
+        "valor_responsabilidad": number,
+        "valor_verdad": number,
+        "liderazgo": number,
+        "trata_bien_incluye": number,
+        "resuelve_conflictos": number,
+        "total": number
+      },
+      "menciones_negativas": {
+        "relaciones_negativas_compartir": number,
+        "siente_solo": number,
+        "pasandolo_mal": number,
+        "relaciones_negativas_trabajar": number,
+        "molesta_otros": number,
+        "total": number
+      },
+      "rol": "Líder Positivo" | "Saludable" | "Desafío" | "No responde"
+    }
+  ],
+  "relaciones": [
+    {
+      "from": "student_name",
+      "to": "student_name",
+      "tipo": "trabajo_positivo" | "convivencia_positiva" | "trabajo_negativo" | "convivencia_negativa",
+      "fuerza": number (1-3)
+    }
+  ]
+}
+
+PDF Text:
+${fullText}`;
+
+  try {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 8000,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`DeepSeek API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+
+    // Parse JSON from response (handle markdown code blocks if present)
+    let jsonStr = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1];
+    }
+
+    const parsed = JSON.parse(jsonStr);
+
+    const students = parsed.estudiantes.map((e: any) => e.nombre);
+    const relations = parsed.relaciones || [];
+
+    console.debug(`Parsed ${students.length} students from group PDF via DeepSeek`);
+    console.debug(`Parsed ${relations.length} relations from group PDF via DeepSeek`);
+
+    return {
+      students,
+      relations: relations.map((r: any) => ({
+        from: r.from,
+        to: r.to,
+        tipo: r.tipo,
+        count: r.fuerza || 1,
+      })),
+      studentData: parsed.estudiantes,
+    };
+  } catch (error) {
+    console.error('DeepSeek parsing failed:', error);
+    throw error;
+  }
+}
