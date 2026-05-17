@@ -62,6 +62,9 @@ export interface Student {
   disciplinaryMeasures?: string;
   relationalRole?: RelationalRole;
   cohortGroup?: string;
+  academicPerformance?: 'Muy Alto' | 'Alto' | 'Promedio' | 'Bajo' | 'Muy Bajo';
+  academicNotes?: string;
+  behaviorNotes?: string;
   riskStatus: RiskStatus;
   createdAt: string;
   updatedAt: string;

@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Filter, 
-  MoreVertical, 
+import {
+  Search,
+  Plus,
+  Filter,
+  MoreVertical,
   ExternalLink,
   BrainCircuit,
   MessageSquare,
   UserPlus,
   Upload,
   Download,
-  Mail
+  Mail,
+  Camera,
+  X,
+  Save
 } from 'lucide-react';
-import { collection, onSnapshot, query, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { Student, RiskStatus, RelationalRole } from '../types';
+import { collection, onSnapshot, query, addDoc, serverTimestamp, updateDoc, doc, where } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../lib/firebase';
+import { Student, RiskStatus, RelationalRole, Category, Observation } from '../types';
 import { downloadTemplate, parseFile } from '../utils/csvHelpers';
 import Markdown from 'react-markdown';
 
@@ -29,6 +33,14 @@ const Students: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileStudent, setProfileStudent] = useState<Student | null>(null);
+  const [activeTab, setActiveTab] = useState<'personal' | 'academico' | 'familia' | 'salud'>('personal');
+  const [observations, setObservations] = useState<Observation[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isAddingObservation, setIsAddingObservation] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'students'));
@@ -37,6 +49,96 @@ const Students: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!profileStudent) {
+      setObservations([]);
+      return;
+    }
+    const q = query(collection(db, 'observations'), where('studentId', '==', profileStudent.id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setObservations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Observation)));
+    });
+    return () => unsubscribe();
+  }, [profileStudent]);
+
+  const openProfileModal = (student: Student) => {
+    setProfileStudent(student);
+    setActiveTab('personal');
+    setSummary(null);
+    setIsProfileModalOpen(true);
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profileStudent) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const storageRef = ref(storage, `students/${profileStudent.id}/photo`);
+      await uploadBytes(storageRef, file);
+      const photoUrl = await getDownloadURL(storageRef);
+
+      const studentRef = doc(db, 'students', profileStudent.id);
+      await updateDoc(studentRef, { photoUrl });
+
+      setProfileStudent(prev => prev ? { ...prev, photoUrl } : null);
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('Error al subir la foto.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!profileStudent) return;
+
+    setIsSavingProfile(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const updates = Object.fromEntries(
+        Array.from(formData.entries()).filter(([, value]) => value !== '' && value !== undefined)
+      );
+
+      const studentRef = doc(db, 'students', profileStudent.id);
+      await updateDoc(studentRef, updates);
+
+      setProfileStudent(prev => prev ? { ...prev, ...updates } : null);
+      alert('Perfil guardado exitosamente.');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Error al guardar el perfil.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleAddObservation = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!profileStudent) return;
+
+    setIsAddingObservation(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const newObservation = {
+        studentId: profileStudent.id,
+        courseId: profileStudent.courseId,
+        text: formData.get('text') as string,
+        category: formData.get('category') as Category,
+        date: new Date().toISOString(),
+      };
+
+      await addDoc(collection(db, 'observations'), newObservation);
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error('Error adding observation:', error);
+      alert('Error al agregar la observación.');
+    } finally {
+      setIsAddingObservation(false);
+    }
+  };
 
   const handleAddStudent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -236,7 +338,7 @@ const Students: React.FC = () => {
             </div>
 
             <div className="mb-6 relative z-10">
-              <button onClick={() => setSelectedStudent(student)} className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors uppercase font-display text-left">
+              <button onClick={() => openProfileModal(student)} className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors uppercase font-display text-left">
                 {student.name}
               </button>
               <p className="text-xs text-neutral-500 font-mono tracking-tighter">RUT: {student.rut}</p>
@@ -244,7 +346,7 @@ const Students: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 relative z-10">
-              <button 
+              <button
                 onClick={() => analyzeRisk(student)}
                 disabled={isAnalyzing === student.id}
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl font-bold text-xs hover:bg-blue-500/20 transition-colors disabled:opacity-50 border border-blue-500/20"
@@ -252,8 +354,8 @@ const Students: React.FC = () => {
                 {isAnalyzing === student.id ? '...' : <BrainCircuit className="w-4 h-4" />}
                 {isAnalyzing === student.id ? 'Analizando' : 'Evaluar IA'}
               </button>
-              <button 
-                onClick={() => setSelectedStudent(student)}
+              <button
+                onClick={() => openProfileModal(student)}
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-white/5 text-neutral-300 rounded-xl font-bold text-xs hover:bg-white/10 transition-colors border border-white/5"
               >
                 <UserPlus className="w-4 h-4" />
@@ -377,75 +479,257 @@ const Students: React.FC = () => {
         </div>
       )}
 
-      {/* Selected Student / AI Summary Modal */}
-      {selectedStudent && (
+      {/* Profile Editor Modal */}
+      {isProfileModalOpen && profileStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-2xl rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200 mt-10 mb-10 max-h-[90vh] overflow-y-auto relative">
-            <button 
-              onClick={() => setSelectedStudent(null)}
-              className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-white/10 rounded-xl text-neutral-400 hover:text-white transition-all"
-            >
-              Cerrar
-            </button>
-            
-            <h3 className="text-3xl font-bold text-white mb-2 font-display">{selectedStudent.name}</h3>
-            <p className="text-neutral-400 font-mono text-sm mb-6">RUT: {selectedStudent.rut}</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-[#111111] p-5 rounded-2xl border border-white/5 text-sm">
-                <h4 className="text-blue-400 font-bold mb-3 uppercase tracking-wider font-mono text-xs">Contacto Familia</h4>
-                {selectedStudent.guardian1Name ? (
-                  <div className="space-y-2">
-                    <p className="text-white"><span className="text-neutral-500">{selectedStudent.guardian1Relation || 'Apo. 1'}:</span> {selectedStudent.guardian1Name}</p>
-                    <p className="text-neutral-300">{selectedStudent.guardian1Phone}</p>
-                    <button 
-                      onClick={() => handleEmailParent(selectedStudent.guardian1Email, selectedStudent.name)}
-                      className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2 mt-1"
-                    >
-                      <Mail className="w-4 h-4" /> {selectedStudent.guardian1Email || 'Sin email'}
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-neutral-500 italic">No hay información del apoderado 1</p>
-                )}
-                
-                {selectedStudent.guardian2Name && (
-                  <div className="space-y-2 mt-4 pt-4 border-t border-white/5">
-                    <p className="text-white"><span className="text-neutral-500">{selectedStudent.guardian2Relation || 'Apo. 2'}:</span> {selectedStudent.guardian2Name}</p>
-                    <p className="text-neutral-300">{selectedStudent.guardian2Phone}</p>
-                    <button 
-                      onClick={() => handleEmailParent(selectedStudent.guardian2Email, selectedStudent.name)}
-                      className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2 mt-1"
-                    >
-                      <Mail className="w-4 h-4" /> {selectedStudent.guardian2Email || 'Sin email'}
-                    </button>
-                  </div>
-                )}
+          <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-3xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 mt-10 mb-10 max-h-[90vh] overflow-y-auto relative flex flex-col">
+            {/* Sticky Header */}
+            <div className="sticky top-0 bg-[#0A0A0A] border-b border-white/10 p-6 flex items-center justify-between z-10">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 bg-[#1a1a1a] border-2 border-white/10 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden text-2xl font-bold text-neutral-400 relative group cursor-pointer">
+                  {profileStudent.photoUrl ? <img src={profileStudent.photoUrl} alt="" className="w-full h-full object-cover" /> : profileStudent.name[0]}
+                  <button
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    <Camera className="w-6 h-6 text-white" />
+                  </button>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={isUploadingPhoto}
+                    className="hidden"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white font-display">{profileStudent.name}</h2>
+                  <p className="text-neutral-400 font-mono text-sm">RUT: {profileStudent.rut}</p>
+                </div>
               </div>
-
-              <div className="bg-[#111111] p-5 rounded-2xl border border-white/5 text-sm space-y-3">
-                <h4 className="text-blue-400 font-bold mb-3 uppercase tracking-wider font-mono text-xs">Información Adicional</h4>
-                <p className="text-neutral-300"><span className="text-neutral-500">Apoyo Externo:</span> {selectedStudent.externalSupport || 'Ninguno'}</p>
-                <p className="text-neutral-300"><span className="text-neutral-500">Alertas Médicas:</span> {selectedStudent.medicalAlerts || 'Ninguna'}</p>
-                <p className="text-neutral-300"><span className="text-neutral-500">Situación Familiar:</span> {selectedStudent.familySituation || 'No especificada'}</p>
-              </div>
+              <button
+                onClick={() => setIsProfileModalOpen(false)}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-neutral-400 hover:text-white transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
-            <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-6 rounded-3xl border border-blue-500/20">
+            {/* Tab Bar */}
+            <div className="flex gap-1 px-6 pt-6 border-b border-white/10">
+              {(['personal', 'academico', 'familia', 'salud'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 font-bold rounded-t-2xl transition-all ${
+                    activeTab === tab
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-neutral-400 hover:text-neutral-300'
+                  }`}
+                >
+                  {tab === 'personal' && 'Personal'}
+                  {tab === 'academico' && 'Académico'}
+                  {tab === 'familia' && 'Familia'}
+                  {tab === 'salud' && 'Salud'}
+                </button>
+              ))}
+            </div>
+
+            {/* Form Content */}
+            <form onSubmit={handleSaveProfile} className="flex-1 p-6 overflow-y-auto space-y-4">
+              {activeTab === 'personal' && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Nombre</label>
+                      <input type="text" name="name" defaultValue={profileStudent.name} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">RUT</label>
+                      <input type="text" name="rut" defaultValue={profileStudent.rut} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Fecha de Nacimiento</label>
+                      <input type="date" name="dateOfBirth" defaultValue={profileStudent.dateOfBirth || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Email</label>
+                      <input type="email" name="email" defaultValue={profileStudent.email || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Teléfono</label>
+                      <input type="tel" name="phone" defaultValue={profileStudent.phone || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Dirección</label>
+                      <input type="text" name="address" defaultValue={profileStudent.address || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'academico' && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Desempeño Académico</label>
+                      <select name="academicPerformance" defaultValue={profileStudent.academicPerformance || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white">
+                        <option value="">Seleccionar...</option>
+                        <option value="Muy Alto">Muy Alto</option>
+                        <option value="Alto">Alto</option>
+                        <option value="Promedio">Promedio</option>
+                        <option value="Bajo">Bajo</option>
+                        <option value="Muy Bajo">Muy Bajo</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Estado de Riesgo</label>
+                      <select name="riskStatus" defaultValue={profileStudent.riskStatus} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white">
+                        <option value="Verde">Verde</option>
+                        <option value="Amarillo">Amarillo</option>
+                        <option value="Rojo">Rojo</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Notas Académicas</label>
+                    <textarea name="academicNotes" defaultValue={profileStudent.academicNotes || ''} rows={3} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Notas de Comportamiento</label>
+                    <textarea name="behaviorNotes" defaultValue={profileStudent.behaviorNotes || ''} rows={3} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'familia' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Situación Familiar</label>
+                    <textarea name="familySituation" defaultValue={profileStudent.familySituation || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                  </div>
+                  <div className="border-t border-white/10 pt-4">
+                    <h4 className="font-bold text-white mb-4">Apoderado 1</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input type="text" name="guardian1Name" defaultValue={profileStudent.guardian1Name || ''} placeholder="Nombre" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                      <input type="text" name="guardian1Relation" defaultValue={profileStudent.guardian1Relation || ''} placeholder="Relación (Padre, Madre, etc.)" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                      <input type="email" name="guardian1Email" defaultValue={profileStudent.guardian1Email || ''} placeholder="Email" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                      <input type="tel" name="guardian1Phone" defaultValue={profileStudent.guardian1Phone || ''} placeholder="Teléfono" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                    </div>
+                  </div>
+                  <div className="border-t border-white/10 pt-4">
+                    <h4 className="font-bold text-white mb-4">Apoderado 2</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input type="text" name="guardian2Name" defaultValue={profileStudent.guardian2Name || ''} placeholder="Nombre" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                      <input type="text" name="guardian2Relation" defaultValue={profileStudent.guardian2Relation || ''} placeholder="Relación (Padre, Madre, etc.)" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                      <input type="email" name="guardian2Email" defaultValue={profileStudent.guardian2Email || ''} placeholder="Email" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                      <input type="tel" name="guardian2Phone" defaultValue={profileStudent.guardian2Phone || ''} placeholder="Teléfono" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'salud' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Diagnóstico</label>
+                    <textarea name="diagnosis" defaultValue={profileStudent.diagnosis || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Alertas Médicas</label>
+                    <textarea name="medicalAlerts" defaultValue={profileStudent.medicalAlerts || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Apoyo Externo</label>
+                    <textarea name="externalSupport" defaultValue={profileStudent.externalSupport || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Medidas Disciplinarias</label>
+                    <textarea name="disciplinaryMeasures" defaultValue={profileStudent.disciplinaryMeasures || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                  </div>
+                </>
+              )}
+
+              {/* Sticky Save Button */}
+              <div className="sticky bottom-0 bg-[#0A0A0A] border-t border-white/10 pt-4 mt-4 flex gap-3">
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold transition-all ${
+                    isSavingProfile
+                      ? 'bg-neutral-800 text-neutral-500'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                  }`}
+                >
+                  <Save className="w-5 h-5" />
+                  {isSavingProfile ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+
+            {/* Observations Section */}
+            <div className="border-t border-white/10 p-6 space-y-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-blue-400" />
+                Observaciones
+              </h3>
+
+              <div className="space-y-3 max-h-48 overflow-y-auto">
+                {observations.map(obs => (
+                  <div key={obs.id} className="bg-[#111111] p-4 rounded-2xl border border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-blue-400">{obs.category}</span>
+                      <span className="text-xs text-neutral-500">{new Date(obs.date).toLocaleDateString('es-CL')}</span>
+                    </div>
+                    <p className="text-neutral-300 text-sm">{obs.text}</p>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={handleAddObservation} className="space-y-3 bg-[#111111] p-4 rounded-2xl border border-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <select name="category" required className="px-4 py-2 bg-[#0A0A0A] border border-white/10 rounded-xl text-white text-sm">
+                    <option value="">Categoría...</option>
+                    <option value="Académica">Académica</option>
+                    <option value="Conductual">Conductual</option>
+                    <option value="Relacional">Relacional</option>
+                    <option value="Emocional">Emocional</option>
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={isAddingObservation}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                      isAddingObservation
+                        ? 'bg-neutral-800 text-neutral-500'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar
+                  </button>
+                </div>
+                <textarea name="text" required placeholder="Nueva observación..." rows={2} className="w-full px-4 py-2 bg-[#0A0A0A] border border-white/10 rounded-xl text-white text-sm resize-none placeholder:text-neutral-600" />
+              </form>
+            </div>
+
+            {/* AI Summary Section */}
+            <div className="border-t border-white/10 p-6 bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500/20">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="flex items-center gap-2 text-lg font-bold text-white">
                   <BrainCircuit className="text-blue-400" />
                   Asistente IA para Entrevistas
                 </h4>
-                <button 
-                  onClick={() => generateSummary(selectedStudent)}
+                <button
+                  onClick={() => generateSummary(profileStudent)}
                   disabled={isSummarizing}
                   className={`px-4 py-2 ${isSummarizing ? 'bg-neutral-800 text-neutral-500' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'} rounded-xl font-bold transition-all text-sm`}
                 >
                   {isSummarizing ? 'Generando...' : (summary ? 'Regenerar Resumen' : 'Generar Resumen')}
                 </button>
               </div>
-              
+
               {summary && (
                 <div className="mt-6 p-6 bg-black/40 rounded-2xl border border-white/10 prose prose-invert prose-blue max-w-none text-sm md:text-base leading-relaxed">
                   <div className="markdown-body">
@@ -453,7 +737,7 @@ const Students: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {!summary && !isSummarizing && (
                 <p className="text-neutral-400 text-sm italic">Genera un resumen analítico con la IA basándose en los datos del estudiante para prepararte para tu próxima reunión con los apoderados.</p>
               )}
