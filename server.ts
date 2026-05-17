@@ -4,11 +4,10 @@ import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
-import { setDoc, doc } from "firebase/firestore";
+import * as admin from "firebase-admin";
 import { parseGroupPDFWithDeepSeek } from "./src/lib/pulsoParser";
 import { calculateMetrics } from "./src/lib/sociogramMetrics";
 import type { SociogramData, SociogramRelation } from "./src/types/index";
-import { db } from "./src/lib/firebase";
 
 // Extend Express Request type to include files from express-fileupload
 declare global {
@@ -23,7 +22,42 @@ dotenv.config();
 
 const API_PORT = 3000;
 
+// Initialize Firebase Admin SDK
+function initializeFirebaseAdmin() {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+  if (!serviceAccountJson) {
+    // Try to use default credentials (works in Google Cloud / Vercel with service account binding)
+    try {
+      admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || "gen-lang-client-0735793190",
+      });
+      console.log("Firebase Admin initialized with default credentials");
+    } catch (error) {
+      console.error("Firebase Admin initialization failed:", error);
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT environment variable not set. " +
+        "Please provide Firebase service account credentials as a JSON string."
+      );
+    }
+  } else {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountJson);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      console.log("Firebase Admin initialized with service account credentials");
+    } catch (error) {
+      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT:", error);
+      throw error;
+    }
+  }
+}
+
 async function startServer() {
+  // Initialize Firebase Admin
+  initializeFirebaseAdmin();
+  const db = admin.firestore();
   const app = express();
   app.use(express.json());
   app.use(
@@ -229,9 +263,8 @@ async function startServer() {
         metricas,
       };
 
-      // Save to Firestore
-      const docRef = doc(db, `sociogram_${year}`, courseId);
-      await setDoc(docRef, sociogramData);
+      // Save to Firestore using Admin SDK
+      await db.collection(`sociogram_${year}`).doc(courseId).set(sociogramData);
 
       console.log(
         `Successfully saved sociogram for course ${courseId} at sociogram_${year}/${courseId}`
