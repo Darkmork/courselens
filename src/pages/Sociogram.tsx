@@ -3,9 +3,14 @@ import cytoscape from 'cytoscape';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Student, RelationalRole } from '../types';
-import { Share2, Info, Maximize2, RefreshCw, Users } from 'lucide-react';
+import { Share2, Info, Maximize2, RefreshCw, Users, Upload } from 'lucide-react';
+import type { Page } from '../App';
 
-const Sociogram: React.FC = () => {
+interface SociogramProps {
+  onNavigate?: (page: Page) => void;
+}
+
+const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [cy, setCy] = useState<cytoscape.Core | null>(null);
@@ -126,14 +131,23 @@ const Sociogram: React.FC = () => {
           <p className="text-sm text-neutral-400">Mapeo visual de dinámicas interpersonales y cohesión grupal.</p>
         </div>
         <div className="flex gap-2">
-          <button 
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate?.('import-sociogram' as Page)}
+              className="p-3 bg-blue-600/20 text-blue-400 rounded-xl hover:bg-blue-600/30 transition-all border border-blue-500/30 shadow-sm hover:text-blue-300"
+              title="Importar desde PULSO.cl"
+            >
+              <Upload className="w-5 h-5" />
+            </button>
+          )}
+          <button
             onClick={resetLayout}
             className="p-3 bg-[#111] text-neutral-400 rounded-xl hover:bg-[#1a1a1a] transition-all border border-white/10 shadow-sm hover:text-white"
             title="Actualizar Diseño"
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button 
+          <button
             className="p-3 bg-[#111] text-neutral-400 rounded-xl hover:bg-[#1a1a1a] transition-all border border-white/10 shadow-sm hover:text-white"
             title="Leyenda"
           >
