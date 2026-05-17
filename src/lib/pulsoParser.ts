@@ -20,10 +20,10 @@ async function getPdfjs() {
   let pdfjs: any;
 
   if (typeof window === 'undefined') {
-    // Node.js environment - try to import pdfjs-dist
+    // Node.js environment - try to import pdfjs-dist using dynamic import
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+      // Use dynamic import for ESM modules
+      pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
     } catch (e) {
       throw new Error(
         'pdfjs-dist is required for PDF parsing. Install with: npm install pdfjs-dist'
@@ -56,8 +56,11 @@ export async function parseGroupPDF(
 }> {
   const pdfjs = await getPdfjs();
 
+  // Convert Buffer to Uint8Array for pdfjs compatibility
+  const uint8Array = new Uint8Array(pdfBuffer);
+
   // Load the PDF from the buffer
-  const pdf = await pdfjs.getDocument({ data: pdfBuffer }).promise;
+  const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
   let fullText = '';
 
   // Extract text from all pages
@@ -81,15 +84,33 @@ export async function parseGroupPDF(
     'convivencia_negativa',
   ];
 
-  // Split by lines for parsing
-  const lines = fullText.split('\n');
+  // Split by " [0-9]+ [0-9]+ [0-9]+ [0-9]+" pattern to find student rows
+  // Since students list consists of "NAME 1 2 3 4", we can split on this pattern
+  const lines = fullText.split(/\s+/);
+
+  // Rebuild lines by finding student rows (name followed by 4 numbers)
+  const reconstructedLines: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    // If current and next 5 items match "Word Word Digit Digit Digit Digit", it's a student row
+    if (i + 5 < lines.length &&
+        lines[i].match(/^[A-Z]/) && lines[i+1].match(/^[A-Z]/) &&
+        lines[i+2].match(/^\d+$/) && lines[i+3].match(/^\d+$/) &&
+        lines[i+4].match(/^\d+$/) && lines[i+5].match(/^\d+$/)) {
+      reconstructedLines.push([lines[i], lines[i+1], lines[i+2], lines[i+3], lines[i+4], lines[i+5]].join(' '));
+      i += 5; // Skip the next 5 items
+    } else {
+      reconstructedLines.push(lines[i]);
+    }
+  }
+
+  const lines_final = reconstructedLines;
 
   // Track line index to parse table structure
   let parsingTable = false;
   const tableRows: { studentName: string; counts: number[] }[] = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+  for (let i = 0; i < lines_final.length; i++) {
+    const line = lines_final[i].trim();
 
     // Skip empty lines
     if (!line) continue;
@@ -113,9 +134,16 @@ export async function parseGroupPDF(
       if (nameMatch) {
         const studentName = nameMatch[1].trim();
 
-        // Ensure uniqueness
-        if (!students.includes(studentName)) {
-          students.push(studentName);
+        // Filter out common non-student names
+        if (
+          !studentName.match(
+            /^\s*(Estudiante|Total|Reporte|Grupal|Relaciones|Datos|Tabla)/i
+          )
+        ) {
+          // Ensure uniqueness
+          if (!students.includes(studentName)) {
+            students.push(studentName);
+          }
         }
 
         // Extract numbers following the student name (relation counts)
@@ -305,7 +333,10 @@ export async function parseIndividualPDF(
 ): Promise<StudentSociogramData[]> {
   const pdfjs = await getPdfjs();
 
-  const pdf = await pdfjs.getDocument({ data: pdfBuffer }).promise;
+  // Convert Buffer to Uint8Array for pdfjs compatibility
+  const uint8Array = new Uint8Array(pdfBuffer);
+
+  const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
   let fullText = '';
 
   // Extract text from all pages
@@ -329,10 +360,12 @@ export async function parseIndividualPDF(
     const studentName = matches[i][1].trim();
 
     // Skip common non-student names (e.g., headers, sections)
+    // More comprehensive filter to exclude phrases that aren't individual students
     if (
       studentName.match(
-        /^\s*(Informe|Reporte|Sociograma|Tabla|Total|Estudiante)/i
-      )
+        /^\s*(Informe|Reporte|Individual|Report|Sociograma|Tabla|Total|Estudiante|Autoreporte|Menciones|Relaciones|Datos|Detallados)/i
+      ) ||
+      studentName.match(/^[A-Z][a-záéíóúüñ]+\s+(Positiv|Saludable|Desafío|Responde)/i)
     ) {
       continue;
     }
