@@ -57,7 +57,10 @@ function initializeFirebaseAdmin() {
 async function startServer() {
   // Initialize Firebase Admin
   initializeFirebaseAdmin();
-  const db = admin.firestore();
+  // Use specific Firestore database (AI Studio has a non-default database)
+  const db = admin.firestore({
+    databaseId: "ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02"
+  });
   const app = express();
   app.use(express.json());
   app.use(
