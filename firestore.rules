@@ -23,18 +23,13 @@ service cloud.firestore {
 
     // --- Students ---
     function isValidStudent(data) {
-      return data.id is string && data.id.size() <= 64 &&
-             data.name is string && data.name.size() <= 256 &&
-             data.courseId is string &&
-             data.keys().hasAll(['id', 'courseId', 'name', 'rut']) &&
-             data.keys().size() <= 40;
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 256;
     }
 
     match /students/{studentId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isValidStudent(request.resource.data);
-      allow update: if isSignedIn() && isValidStudent(request.resource.data) && 
-                      request.resource.data.courseId == resource.data.courseId;
+      allow update: if isSignedIn() && isValidStudent(request.resource.data);
       allow delete: if isSignedIn();
     }
 
