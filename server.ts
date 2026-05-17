@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request } from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
@@ -9,6 +9,15 @@ import { parseGroupPDF, parseIndividualPDF } from "./src/lib/pulsoParser";
 import { calculateMetrics } from "./src/lib/sociogramMetrics";
 import type { SociogramData, SociogramRelation } from "./src/types/index";
 import { db } from "./src/lib/firebase";
+
+// Extend Express Request type to include files from express-fileupload
+declare global {
+  namespace Express {
+    interface Request {
+      files?: { [key: string]: fileUpload.UploadedFile | fileUpload.UploadedFile[] };
+    }
+  }
+}
 
 dotenv.config();
 
