@@ -248,6 +248,7 @@ async function startServer() {
           relationCount: relaciones.length,
           metrics: metricas,
         },
+        note: 'Check server logs for token usage details from DeepSeek',
       });
     } catch (error) {
       console.error("Error importing sociogram:", error);

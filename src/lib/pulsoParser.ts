@@ -561,6 +561,17 @@ ${fullText}`;
     const data = await response.json();
     const content = data.choices[0].message.content;
 
+    // Log token usage
+    if (data.usage) {
+      console.log(`DeepSeek Token Usage:`, {
+        prompt_tokens: data.usage.prompt_tokens,
+        completion_tokens: data.usage.completion_tokens,
+        total_tokens: data.usage.total_tokens,
+        cache_creation_input_tokens: data.usage.cache_creation_input_tokens || 0,
+        cache_read_input_tokens: data.usage.cache_read_input_tokens || 0,
+      });
+    }
+
     // Parse JSON from response (handle markdown code blocks if present)
     let jsonStr = content;
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
