@@ -36,6 +36,7 @@ function initializeFirebaseAdmin() {
     if (serviceAccountJson) {
       try {
         const serviceAccount = JSON.parse(serviceAccountJson);
+        console.log(`✓ Service account loaded: project=${serviceAccount.project_id}, email=${serviceAccount.client_email}`);
         admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
         });
@@ -77,9 +78,19 @@ async function startServer() {
       // Test read to verify database is accessible
       try {
         const testDoc = await db.collection("students").limit(1).get();
-        console.log(`✓ Firestore database accessible (found ${testDoc.size} students)`);
+        console.log(`✓ Firestore READ test passed (found ${testDoc.size} students)`);
       } catch (testError: any) {
-        console.warn(`⚠️  Firestore read test failed: ${testError?.code || testError?.message}`);
+        console.warn(`⚠️  Firestore READ test failed (code ${testError?.code}): ${testError?.message}`);
+      }
+
+      // Test write to verify database write permissions
+      try {
+        const testRef = db.collection("_tests").doc("_connectivity_test");
+        await testRef.set({ timestamp: new Date(), status: "ok" });
+        await testRef.delete();
+        console.log("✓ Firestore WRITE test passed");
+      } catch (writeError: any) {
+        console.warn(`⚠️  Firestore WRITE test failed (code ${writeError?.code}): ${writeError?.message}`);
       }
 
       console.log("✓ Firestore initialized with default database");
