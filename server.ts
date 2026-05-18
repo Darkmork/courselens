@@ -247,11 +247,17 @@ async function startServer() {
       }
 
       const groupPdfFile = req.files.groupPdf as fileUpload.UploadedFile;
+      const graphPage2 = req.body.graphPage2 as string | undefined; // base64 from client
+      const graphPage3 = req.body.graphPage3 as string | undefined; // base64 from client
 
       console.log(`Importing sociogram for course ${courseId}, year ${year}`);
+      console.log(`Graph images received: page2=${!!graphPage2}, page3=${!!graphPage3}`);
 
-      // Parse group PDF using DeepSeek to extract table data
-      const parseResult = await parseGroupPDFWithDeepSeek(groupPdfFile.data);
+      // Parse group PDF using DeepSeek to extract table data and relationships
+      const parseResult = await parseGroupPDFWithDeepSeek(groupPdfFile.data, {
+        graphPage2,
+        graphPage3,
+      });
       const { studentData, relations: rawRelations } = parseResult;
 
       console.log(`Parsed ${studentData.length} students from group PDF via DeepSeek`);

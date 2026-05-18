@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { setDoc, doc } from 'firebase/firestore';
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface ImportSummary {
   studentCount: number;
@@ -19,6 +20,45 @@ interface ImportSociogramProps {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+// Set up PDF.js worker
+if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+}
+
+async function renderPdfPageToImage(file: File, pageNum: number): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  if (pageNum > pdf.numPages) {
+    throw new Error(`PDF has only ${pdf.numPages} pages, requested page ${pageNum}`);
+  }
+
+  const page = await pdf.getPage(pageNum);
+  const viewport = page.getViewport({ scale: 1.5 });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Could not get canvas context');
+
+  await page.render({ canvasContext: context, viewport }).promise;
+
+  // Convert to base64 JPEG
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (!blob) throw new Error('Failed to convert canvas to blob');
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.readAsDataURL(blob);
+    }, 'image/jpeg', 0.85);
+  });
+}
+
 export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   courseId = 'course-1',
   onBack
@@ -28,11 +68,12 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState<string>('');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  const [graphImages, setGraphImages] = useState<{ page2?: string; page3?: string }>({});
 
   // File input ref for resetting
   const groupPdfInputRef = useRef<HTMLInputElement>(null);
 
-  const handleGroupPdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGroupPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -50,7 +91,32 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
 
     setGroupPdf(file);
     setImportStatus('idle');
-    setImportMessage('');
+    setImportMessage('Extrayendo gráficos de relaciones...');
+
+    // Render relationship graph pages (2-3) to images
+    try {
+      const images: { page2?: string; page3?: string } = {};
+
+      try {
+        images.page2 = await renderPdfPageToImage(file, 2);
+        console.log('✓ Rendered page 2 (trabajo positivo graph)');
+      } catch (err) {
+        console.warn('Could not render page 2:', err);
+      }
+
+      try {
+        images.page3 = await renderPdfPageToImage(file, 3);
+        console.log('✓ Rendered page 3 (convivencia positiva graph)');
+      } catch (err) {
+        console.warn('Could not render page 3:', err);
+      }
+
+      setGraphImages(images);
+      setImportMessage('✓ PDF cargado. Gráficos extraídos.');
+    } catch (error) {
+      console.error('Error rendering PDF pages:', error);
+      setImportMessage('PDF cargado, pero no se pudieron extraer los gráficos (continuará sin ellos)');
+    }
   };
 
 
@@ -71,6 +137,14 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
       formData.append('groupPdf', groupPdf);
       formData.append('year', year);
       formData.append('courseId', courseId);
+
+      // Add rendered graph images if available
+      if (graphImages.page2) {
+        formData.append('graphPage2', graphImages.page2);
+      }
+      if (graphImages.page3) {
+        formData.append('graphPage3', graphImages.page3);
+      }
 
       const response = await fetch('/api/import/sociogram', {
         method: 'POST',

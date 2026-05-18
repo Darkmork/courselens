@@ -436,7 +436,8 @@ export async function parseIndividualPDF(
  * @returns Promise with students array and relations array
  */
 export async function parseGroupPDFWithDeepSeek(
-  pdfBuffer: Buffer
+  pdfBuffer: Buffer,
+  options?: { graphPage2?: string; graphPage3?: string }
 ): Promise<{
   students: string[];
   relations: Array<{ from: string; to: string; tipo: string; count: number }>;
@@ -470,26 +471,31 @@ export async function parseGroupPDFWithDeepSeek(
     throw new Error('DEEPSEEK_API_KEY environment variable is not set');
   }
 
-  // Build message content
-  const prompt = `You are a PULSO.cl sociogram data parser. Extract ALL student data and relationships from the PDF text below.
+  // Build message content with text and optional graph images
+  const prompt = `You are a PULSO.cl sociogram data parser. Extract ALL student data and relationships from this PULSO.cl report.
 
-TASK 1: Extract student data from the summary table
+CRITICAL INSTRUCTIONS:
+
+TASK 1: Extract student data from the data table
 - Student names
-- Autoreporte scores (5 dimensions: 1-5 scale)
-- Menciones counts (positive and negative)
+- Autoreporte scores (5 dimensions, 1-5 scale each)
+- Menciones counts (positive and negative categories)
 - Student role (Líder Positivo, Desafío, No responde, Saludable)
 
-TASK 2: Extract relationships
-The PDF contains relationship graphs. Even if you cannot see the exact graph visually, look for:
-- Student pairs mentioned together
-- Patterns in mentions (if student A has many positive mentions, they likely have relationships)
-- Any explicit relationship data in the text
+TASK 2: Extract relationships - THIS IS THE MOST IMPORTANT
+${options?.graphPage2 || options?.graphPage3 ? `
+The images below show the relationship graphs:
+- Image 1 (if present): "Relaciones positivas de trabajo" - solid green lines showing work relationships
+- Image 2 (if present): "Relaciones positivas de convivencia" - dotted green lines showing social relationships
 
-Create relationship entries with:
-- from: first student name
-- to: second student name
-- tipo: "trabajo_positivo" or "convivencia_positiva" (infer from context)
-- fuerza: 1-3 (based on mention frequency or strength)
+Analyze the graphs carefully and extract EVERY connection shown:
+- For each line connecting two students, create a relationship entry
+- tipo should be "trabajo_positivo" for work relationships or "convivencia_positiva" for social relationships
+- fuerza (1-3) based on line prominence/thickness
+` : `
+The PDF contains relationship graphs (pages 2-3) showing connections between students.
+Look for patterns in the text that indicate relationships.
+`}
 
 Return ONLY valid JSON (no markdown, no code blocks):
 {
@@ -534,15 +540,34 @@ Return ONLY valid JSON (no markdown, no code blocks):
       "from": "student_name",
       "to": "student_name",
       "tipo": "trabajo_positivo" | "convivencia_positiva",
-      "fuerza": 1
+      "fuerza": 1-3
     }
   ]
 }
 
-PDF Text Content:
+Table data from PDF:
 ${fullText}`;
 
-  const messageContent = [{ type: 'text', text: prompt }];
+  const messageContent: any[] = [{ type: 'text', text: prompt }];
+
+  // Add graph images if provided
+  if (options?.graphPage2) {
+    messageContent.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${options.graphPage2}`,
+      },
+    });
+  }
+
+  if (options?.graphPage3) {
+    messageContent.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${options.graphPage3}`,
+      },
+    });
+  }
 
   try {
     // Create abort controller with 120 second timeout for DeepSeek request
