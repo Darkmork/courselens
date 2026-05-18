@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import type { JSX } from 'react';
 
 interface FormResponseCardProps {
   category: string;

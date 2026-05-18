@@ -22,9 +22,10 @@ import { Student, RiskStatus, RelationalRole, Category, Observation } from '../t
 import { downloadTemplate, parseFile } from '../utils/csvHelpers';
 import Markdown from 'react-markdown';
 import StudentGrowthTimeline from '../components/StudentGrowthTimeline';
+import type { Page } from '../App';
 
 interface StudentsProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: Page) => void;
 }
 
 const Students: React.FC<StudentsProps> = ({ onNavigate }) => {

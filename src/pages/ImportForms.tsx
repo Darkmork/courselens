@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import type { Page } from '../App';
 
 interface ImportProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: Page) => void;
 }
 
 export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {

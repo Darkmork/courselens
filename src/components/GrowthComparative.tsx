@@ -28,9 +28,9 @@ export const GrowthComparative: React.FC<GrowthComparativeProps> = ({ responses 
     if (prev === undefined || current === undefined) return null;
 
     if (typeof prev === 'number' && typeof current === 'number') {
-      if (current > prev) return <TrendingUp className="w-3 h-3 text-green-400" title="Mejoró" />;
-      if (current < prev) return <TrendingDown className="w-3 h-3 text-red-400" title="Disminuyó" />;
-      return <Minus className="w-3 h-3 text-neutral-400" title="Sin cambios" />;
+      if (current > prev) return <TrendingUp className="w-3 h-3 text-green-400" aria-label="Mejoró" />;
+      if (current < prev) return <TrendingDown className="w-3 h-3 text-red-400" aria-label="Disminuyó" />;
+      return <Minus className="w-3 h-3 text-neutral-400" aria-label="Sin cambios" />;
     }
 
     if (JSON.stringify(prev) !== JSON.stringify(current)) {
