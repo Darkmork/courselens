@@ -11,6 +11,27 @@
 
 export type FormType = 'inicio_III_medio' | 'fin_I_semestre' | 'inicio_IV_medio';
 
+/**
+ * Personality traits from "inicio_III_medio" Google Form yes/no questions.
+ * Each trait corresponds to a yes/no checkbox in the form like:
+ * - lee: "¿Te gusta leer?"
+ * - organizado: "¿Eres una persona organizada?"
+ * - introvertido: "¿Prefieres pasar tiempo solo?"
+ * - deporte: "¿Te gusta el deporte?"
+ * - creativo: "¿Te consideras una persona creativa?"
+ * - musica: "¿Te gusta la música?"
+ * - puntual: "¿Eres una persona puntual?"
+ * - publico: "¿Te sientes cómodo hablando en público?"
+ * - cocina: "¿Te gusta cocinar?"
+ * - idioma: "¿Te interesa aprender otro idioma?"
+ * - viajes: "¿Te gustaría viajar a otro país?"
+ * - peliculas: "¿Te gusta ver películas o series?"
+ * - riesgos: "¿Eres una persona que prefiere tomar riesgos?"
+ * - voluntariado: "¿Te gustaría participar en algún voluntariado o trabajo social?"
+ * - autodidacta: "¿Te consideras una persona autodidacta?"
+ *
+ * @see Form: https://docs.google.com/forms/d/e/1FAIpQLSfFRRSzin1jrjpWGxPRgRfAP_uEa_JjcqRpq4gcyh0JXuQf-Q
+ */
 export type PersonalityTrait = 'lee' | 'organizado' | 'introvertido' | 'deporte' | 'creativo' | 'musica' | 'puntual' | 'publico' | 'cocina' | 'idioma' | 'viajes' | 'peliculas' | 'riesgos' | 'voluntariado' | 'autodidacta';
 
 export interface PersonalData {
