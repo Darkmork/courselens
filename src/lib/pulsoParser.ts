@@ -470,29 +470,30 @@ export async function parseGroupPDFWithDeepSeek(
     throw new Error('DEEPSEEK_API_KEY environment variable is not set');
   }
 
-  const prompt = `You are a PULSO.cl sociogram data parser. Below is extracted text from a PULSO.cl group report PDF table.
+  const prompt = `You are a PULSO.cl sociogram data parser. Analyze this PULSO.cl group report data.
 
-Your task: Extract all student data from this table and return valid JSON (no markdown, just raw JSON).
+IMPORTANT: This PDF contains:
+1. A data table (page 1) with student names and autoreporte/menciones scores
+2. Two relationship graphs (pages 2-3) showing connections between students
 
-IMPORTANT: The table contains columns for:
-- Student name
-- Autoreporte (5 fields: bienestar_general, aprendizaje, relaciones_interpersonales, autogestion_academica, inclusion) - values 1-5
-- Menciones Positivas (14 categories)
-- Menciones Negativas (5 categories)
-- Student role (Líder Positivo, Saludable, Desafío, No responde)
-- Relations (work/coexistence positive/negative mentions between students)
+Extract ALL student data and relationships from the PDF. Return valid JSON (no markdown).
 
-Return this JSON structure (no markdown, just JSON):
+For relationships: Analyze the graph diagrams and extract edges showing:
+- Trabajo positivo (solid green lines)
+- Convivencia positiva (dotted green lines)
+- Any negative relationships shown
+
+Return this JSON structure ONLY (no markdown, pure JSON):
 {
   "estudiantes": [
     {
       "nombre": "string",
       "autoreporte": {
-        "bienestar_general": number,
-        "aprendizaje": number,
-        "relaciones_interpersonales": number,
-        "autogestion_academica": number,
-        "inclusion": number
+        "bienestar_general": number 1-5,
+        "aprendizaje": number 1-5,
+        "relaciones_interpersonales": number 1-5,
+        "autogestion_academica": number 1-5,
+        "inclusion": number 1-5
       },
       "menciones_positivas": {
         "relaciones_compartir": number,
@@ -517,20 +518,20 @@ Return this JSON structure (no markdown, just JSON):
         "molesta_otros": number,
         "total": number
       },
-      "rol": "Líder Positivo" | "Saludable" | "Desafío" | "No responde"
+      "rol": "Líder Positivo"|"Saludable"|"Desafío"|"No responde"
     }
   ],
   "relaciones": [
     {
       "from": "student_name",
       "to": "student_name",
-      "tipo": "trabajo_positivo" | "convivencia_positiva" | "trabajo_negativo" | "convivencia_negativa",
-      "fuerza": number (1-3)
+      "tipo": "trabajo_positivo"|"convivencia_positiva"|"trabajo_negativo"|"convivencia_negativa",
+      "fuerza": number 1-3
     }
   ]
 }
 
-PDF Text:
+PDF content to analyze:
 ${fullText}`;
 
   try {
@@ -552,7 +553,7 @@ ${fullText}`;
             content: prompt,
           },
         ],
-        temperature: 0.3,
+        temperature: 0,
         max_tokens: 8000,
       }),
       signal: controller.signal,
