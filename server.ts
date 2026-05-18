@@ -355,6 +355,129 @@ async function startServer() {
     }
   });
 
+  app.post("/api/import/form-responses", async (req, res) => {
+    try {
+      if (!db) {
+        return res.status(500).json({
+          error: "Firebase not initialized",
+          status: "firebase_not_ready",
+        });
+      }
+
+      if (!req.files || !req.files.csvFile) {
+        return res.status(400).json({
+          error: "csvFile is required",
+          status: "validation_failed",
+        });
+      }
+
+      const { formType, courseId } = req.body;
+      if (!formType || !courseId) {
+        return res.status(400).json({
+          error: "formType and courseId are required",
+          status: "validation_failed",
+        });
+      }
+
+      const csvFile = req.files.csvFile as fileUpload.UploadedFile;
+
+      // Parse CSV
+      const { parseCSV, validateAndMapRow } = await import("./src/lib/csvParser");
+      const Papa = (await import("papaparse")).default;
+
+      let rows: any[] = [];
+      let headers: string[] = [];
+
+      await new Promise<void>((resolve, reject) => {
+        Papa.parse(csvFile.data.toString(), {
+          complete: (results: any) => {
+            headers = results.data[0] || [];
+            rows = results.data.slice(1).filter((row: any[]) => row.some(cell => cell && cell.trim()));
+            resolve();
+          },
+          error: (error: any) => reject(error),
+        });
+      });
+
+      // Validate and map rows
+      const validatedRows = rows.map((row, index) => {
+        const rowObj: Record<string, string> = {};
+        headers.forEach((header, colIndex) => {
+          rowObj[header] = row[colIndex] || "";
+        });
+        return validateAndMapRow(rowObj, formType, index + 2);
+      });
+
+      // Separate valid from invalid
+      const validResponses = validatedRows.filter(r => !r.error).map(r => r.data);
+      const errors = validatedRows.filter(r => r.error).map((r, index) => ({
+        row: index + 2,
+        email: rows[index]["Correo electrónico"] || rows[index]["Correo electronico"],
+        reason: r.error,
+      }));
+
+      // Check student existence and save to Firestore
+      let imported = 0;
+      const studentErrors: Array<{ row: number; email: string; reason: string }> = [];
+
+      for (let i = 0; i < validResponses.length; i++) {
+        const response = validResponses[i];
+
+        try {
+          // Check if student exists
+          const studentQuery = await db
+            .collection("students")
+            .where("email", "==", response.email)
+            .where("courseId", "==", courseId)
+            .limit(1)
+            .get();
+
+          if (studentQuery.empty) {
+            studentErrors.push({
+              row: rows.indexOf(rows[i]) + 2,
+              email: response.email,
+              reason: `Student with email ${response.email} not found in course ${courseId}`,
+            });
+            continue;
+          }
+
+          const studentId = studentQuery.docs[0].id;
+
+          // Save to sub-collection
+          await db
+            .collection("students")
+            .doc(studentId)
+            .collection("formResponses")
+            .doc(response.id)
+            .set(response);
+
+          imported++;
+        } catch (error: any) {
+          studentErrors.push({
+            row: rows.indexOf(rows[i]) + 2,
+            email: response.email,
+            reason: `Database error: ${error.message}`,
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        totalRows: rows.length,
+        imported,
+        failed: validatedRows.filter(r => r.error).length + studentErrors.length,
+        errors: [...errors, ...studentErrors],
+      });
+    } catch (error: any) {
+      console.error("Error importing form responses:", error);
+      res.status(500).json({
+        error: "Failed to import form responses",
+        details: error.message,
+        status: "error",
+      });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
