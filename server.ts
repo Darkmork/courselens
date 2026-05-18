@@ -71,8 +71,8 @@ async function startServer() {
   try {
     if (admin.apps.length > 0) {
       const firestoreApp = admin.app();
-      // Specify the non-default database ID
-      db = firestoreApp.firestore("ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02");
+      // Specify the non-default database ID (must be an object with databaseId property)
+      db = firestoreApp.firestore({ databaseId: "ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02" });
       console.log("✓ Firestore initialized with correct database ID");
     }
   } catch (error) {
