@@ -23,7 +23,11 @@ import { downloadTemplate, parseFile } from '../utils/csvHelpers';
 import Markdown from 'react-markdown';
 import StudentGrowthTimeline from '../components/StudentGrowthTimeline';
 
-const Students: React.FC = () => {
+interface StudentsProps {
+  onNavigate?: (page: string) => void;
+}
+
+const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -282,14 +286,22 @@ const Students: React.FC = () => {
           <p className="text-neutral-400">Gestiona perfiles, seguimiento e intervenciones.</p>
         </div>
         <div className="flex gap-3">
-          <button 
+          <button
+            onClick={() => onNavigate?.('import-forms')}
+            className="px-6 py-3 bg-green-600/20 text-green-400 rounded-2xl font-bold hover:bg-green-600/30 transition-all border border-green-500/30 flex items-center justify-center gap-2 shadow-sm"
+            title="Importar Formularios"
+          >
+            <Upload className="w-5 h-5" />
+            Formularios
+          </button>
+          <button
             onClick={() => setIsImportModalOpen(true)}
             className="px-6 py-3 bg-[#111111] border border-white/10 rounded-2xl font-bold text-neutral-300 hover:bg-[#1a1a1a] flex items-center justify-center gap-2 transition-all shadow-sm"
           >
             <Upload className="w-5 h-5" />
-            Importar
+            Importar CSV
           </button>
-          <button 
+          <button
             onClick={() => setIsAddModalOpen(true)}
             className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
           >
