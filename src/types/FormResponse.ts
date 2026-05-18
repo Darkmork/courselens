@@ -1,6 +1,17 @@
-// src/types/FormResponse.ts
+/**
+ * FormResponse types for Google Forms integration.
+ *
+ * Uses snake_case naming to mirror CSV column names from Google Forms exports
+ * and maintain consistency with PULSO.cl integration (see pulsoParser.ts, sociogramMetrics.ts).
+ * This diverges from the Student interface's camelCase but ensures domain consistency
+ * for form/PULSO data models.
+ *
+ * @see docs/superpowers/specs/2026-05-17-google-forms-timeline-design.md
+ */
 
 export type FormType = 'inicio_III_medio' | 'fin_I_semestre' | 'inicio_IV_medio';
+
+export type PersonalityTrait = 'lee' | 'organizado' | 'introvertido' | 'deporte' | 'creativo' | 'musica' | 'puntual' | 'publico' | 'cocina' | 'idioma' | 'viajes' | 'peliculas' | 'riesgos' | 'voluntariado' | 'autodidacta';
 
 export interface PersonalData {
   edad?: number;
@@ -33,7 +44,7 @@ export interface PersonalTraitsData {
   habilidades?: string[];
   intereses?: string[];
   deporte_arte?: string;
-  personalidad_respuestas?: Record<string, boolean>;
+  personalidad_respuestas?: Record<PersonalityTrait, boolean>;
   como_amigos_definen?: string;
   como_se_define?: string;
 }

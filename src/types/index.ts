@@ -1,4 +1,4 @@
-export type { FormResponse, FormType, PersonalData, AcademicData, SocialData, PersonalTraitsData, EmotionalData, FamilyData, SpiritualData, FutureData, FormImportResult } from './FormResponse';
+export type { FormResponse, FormType, PersonalityTrait, PersonalData, AcademicData, SocialData, PersonalTraitsData, EmotionalData, FamilyData, SpiritualData, FutureData, FormImportResult } from './FormResponse';
 
 export enum RiskStatus {
   RED = 'Rojo',
