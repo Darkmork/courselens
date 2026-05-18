@@ -577,7 +577,7 @@ ${fullText}`;
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     const requestBody = {
-      model: 'deepseek-v4-flash', // Fast multimodal model with vision support
+      model: 'deepseek-v4-pro', // Multimodal model with vision support (flash doesn't support images)
       messages: [
         {
           role: 'user',
