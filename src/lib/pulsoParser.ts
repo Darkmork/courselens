@@ -584,7 +584,7 @@ ${fullText}`;
         },
       ],
       temperature: 0,
-      max_tokens: 8000,
+      max_tokens: 30000,
     };
 
     console.log(`Sending to DeepSeek: ${messageContent.length} content items (${(JSON.stringify(requestBody).length / 1024 / 1024).toFixed(2)} MB)`);
