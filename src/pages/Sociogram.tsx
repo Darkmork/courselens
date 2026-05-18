@@ -80,21 +80,31 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
     const elements: cytoscape.ElementDefinition[] = [];
 
     // Add student nodes
-    sociogramData.estudiantes.forEach((student) => {
+    sociogramData.estudiantes.forEach((student: any) => {
+      const studentId = student.id || student.nombre.toLowerCase().replace(/\s+/g, '-');
+      const positiveMentions = student.menciones_positivas?.total ||
+                               Object.values(student.menciones_positivas || {})
+                                 .filter(v => typeof v === 'number')
+                                 .reduce((a: number, b: any) => a + b, 0) || 0;
+      const negativeMentions = student.menciones_negativas?.total ||
+                               Object.values(student.menciones_negativas || {})
+                                 .filter(v => typeof v === 'number')
+                                 .reduce((a: number, b: any) => a + b, 0) || 0;
+
       elements.push({
         data: {
-          id: student.id,
+          id: studentId,
           label: student.nombre.split(' ')[0], // First name only
           role: student.rol,
           nombre: student.nombre,
-          menciones_positivas: student.menciones_positivas.total,
-          menciones_negativas: student.menciones_negativas.total,
+          menciones_positivas: positiveMentions,
+          menciones_negativas: negativeMentions,
         },
       });
     });
 
     // Add relation edges
-    sociogramData.relaciones.forEach((rel, index) => {
+    sociogramData.relaciones.forEach((rel: any, index: number) => {
       elements.push({
         data: {
           id: `${rel.from_id}-${rel.to_id}-${index}`,
@@ -106,105 +116,125 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       });
     });
 
+    console.log(`[Sociogram] Built ${elements.length} elements: ${sociogramData.estudiantes.length} nodes, ${sociogramData.relaciones.length} edges`);
     return elements;
   };
 
   useEffect(() => {
-    if (!containerRef.current || !sociogramData) return;
+    if (!containerRef.current || !sociogramData) {
+      console.log('[Sociogram] Skipping cytoscape init:', {
+        hasContainer: !!containerRef.current,
+        hasData: !!sociogramData
+      });
+      return;
+    }
 
-    const elements = buildCytoscapeElements();
-    if (elements.length === 0) return;
-
-    const cytoscapeInstance = cytoscape({
-      container: containerRef.current,
-      elements: elements,
-      style: [
-        {
-          selector: 'node',
-          style: {
-            'background-color': (ele: any) => {
-              const role = ele.data('role');
-              switch (role) {
-                case 'Líder Positivo':
-                  return '#10b981'; // green
-                case 'Saludable':
-                  return '#8b5cf6'; // purple
-                case 'Desafío':
-                  return '#ef4444'; // red
-                case 'No responde':
-                  return '#94a3b8'; // gray
-                default:
-                  return '#666';
-              }
-            },
-            'border-width': 2,
-            'border-color': (ele: any) => {
-              const role = ele.data('role');
-              switch (role) {
-                case 'Líder Positivo':
-                  return '#059669';
-                case 'Saludable':
-                  return '#7c3aed';
-                case 'Desafío':
-                  return '#dc2626';
-                case 'No responde':
-                  return '#64748b';
-                default:
-                  return '#555';
-              }
-            },
-            'width': 60,
-            'height': 60,
-            'label': 'data(label)',
-            'font-size': '10px',
-            'font-weight': 'bold',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'color': '#fff',
-            'text-outline-color': '#050505',
-            'text-outline-width': 2,
-            'font-family': 'monospace',
-            'text-transform': 'uppercase'
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-            'line-color': (ele: any) => {
-              const tipo = ele.data('tipo');
-              if (tipo === 'trabajo_positivo') return '#10b981';
-              if (tipo === 'convivencia_positiva') return '#3b82f6';
-              if (tipo === 'trabajo_negativo') return '#ef4444';
-              if (tipo === 'convivencia_negativa') return '#dc2626';
-              return '#666';
-            },
-            'target-arrow-color': (ele: any) => {
-              const tipo = ele.data('tipo');
-              if (tipo === 'trabajo_positivo') return '#10b981';
-              if (tipo === 'convivencia_positiva') return '#3b82f6';
-              if (tipo === 'trabajo_negativo') return '#ef4444';
-              if (tipo === 'convivencia_negativa') return '#dc2626';
-              return '#666';
-            },
-            'width': (ele: any) => ele.data('fuerza') * 1.5,
-            'line-style': (ele: any) => {
-              const tipo = ele.data('tipo');
-              return tipo.includes('negativo') ? 'dashed' : 'solid';
-            },
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'opacity': 0.7
-          }
-        }
-      ],
-      layout: {
-        name: 'cose',
-        animate: true,
-        padding: 50
-      }
+    console.log('[Sociogram] Initializing cytoscape with data:', {
+      students: sociogramData.estudiantes.length,
+      relations: sociogramData.relaciones.length
     });
 
-    setCy(cytoscapeInstance);
+    const elements = buildCytoscapeElements();
+    if (elements.length === 0) {
+      console.warn('[Sociogram] No elements to render!');
+      return;
+    }
+
+    try {
+      const cytoscapeInstance = cytoscape({
+        container: containerRef.current,
+        elements: elements,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': (ele: any) => {
+                const role = ele.data('role');
+                switch (role) {
+                  case 'Líder Positivo':
+                    return '#10b981'; // green
+                  case 'Saludable':
+                    return '#8b5cf6'; // purple
+                  case 'Desafío':
+                    return '#ef4444'; // red
+                  case 'No responde':
+                    return '#94a3b8'; // gray
+                  default:
+                    return '#666';
+                }
+              },
+              'border-width': 2,
+              'border-color': (ele: any) => {
+                const role = ele.data('role');
+                switch (role) {
+                  case 'Líder Positivo':
+                    return '#059669';
+                  case 'Saludable':
+                    return '#7c3aed';
+                  case 'Desafío':
+                    return '#dc2626';
+                  case 'No responde':
+                    return '#64748b';
+                  default:
+                    return '#555';
+                }
+              },
+              'width': 60,
+              'height': 60,
+              'label': 'data(label)',
+              'font-size': '10px',
+              'font-weight': 'bold',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'color': '#fff',
+              'text-outline-color': '#050505',
+              'text-outline-width': 2,
+              'font-family': 'monospace',
+              'text-transform': 'uppercase'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'line-color': (ele: any) => {
+                const tipo = ele.data('tipo');
+                if (tipo === 'trabajo_positivo') return '#10b981';
+                if (tipo === 'convivencia_positiva') return '#3b82f6';
+                if (tipo === 'trabajo_negativo') return '#ef4444';
+                if (tipo === 'convivencia_negativa') return '#dc2626';
+                return '#666';
+              },
+              'target-arrow-color': (ele: any) => {
+                const tipo = ele.data('tipo');
+                if (tipo === 'trabajo_positivo') return '#10b981';
+                if (tipo === 'convivencia_positiva') return '#3b82f6';
+                if (tipo === 'trabajo_negativo') return '#ef4444';
+                if (tipo === 'convivencia_negativa') return '#dc2626';
+                return '#666';
+              },
+              'width': (ele: any) => ele.data('fuerza') * 1.5,
+              'line-style': (ele: any) => {
+                const tipo = ele.data('tipo');
+                return tipo.includes('negativo') ? 'dashed' : 'solid';
+              },
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'opacity': 0.7
+            }
+          }
+        ],
+        layout: {
+          name: 'cose',
+          animate: true,
+          padding: 50
+        }
+      });
+
+      console.log('[Sociogram] Cytoscape initialized successfully');
+      setCy(cytoscapeInstance);
+    } catch (error) {
+      console.error('[Sociogram] Failed to initialize Cytoscape:', error);
+    }
 
     return () => cytoscapeInstance.destroy();
   }, [sociogramData]);
