@@ -550,23 +550,10 @@ ${fullText}`;
 
   const messageContent: any[] = [{ type: 'text', text: prompt }];
 
-  // Add graph images if provided
-  if (options?.graphPage2) {
-    messageContent.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:image/jpeg;base64,${options.graphPage2}`,
-      },
-    });
-  }
-
-  if (options?.graphPage3) {
-    messageContent.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:image/jpeg;base64,${options.graphPage3}`,
-      },
-    });
+  // Note: DeepSeek Chat API doesn't support image_url yet
+  // Graphs are received but not used (fallback to text analysis)
+  if (options?.graphPage2 || options?.graphPage3) {
+    console.log('ℹ️  Graph images received but DeepSeek Chat API does not support image_url. Using text analysis instead.');
   }
 
   try {
