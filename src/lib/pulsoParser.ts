@@ -574,23 +574,29 @@ ${fullText}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
+    const requestBody = {
+      model: 'deepseek-chat',
+      messages: [
+        {
+          role: 'user',
+          content: messageContent,
+        },
+      ],
+      temperature: 0,
+      max_tokens: 8000,
+    };
+
+    console.log(`Sending to DeepSeek: ${messageContent.length} content items (${(JSON.stringify(requestBody).length / 1024 / 1024).toFixed(2)} MB)`);
+    if (options?.graphPage2) console.log('- Graph page 2: included');
+    if (options?.graphPage3) console.log('- Graph page 3: included');
+
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${deepseekApiKey}`,
       },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'user',
-            content: messageContent,
-          },
-        ],
-        temperature: 0,
-        max_tokens: 8000,
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
 

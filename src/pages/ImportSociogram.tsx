@@ -51,17 +51,18 @@ async function renderPdfPageToImage(file: File, pageNum: number): Promise<string
 
   await page.render({ canvasContext: context, viewport }).promise;
 
-  // Convert to base64 JPEG
+  // Convert to base64 JPEG with low quality to reduce size
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
       if (!blob) throw new Error('Failed to convert canvas to blob');
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = (reader.result as string).split(',')[1];
+        console.log(`Graph image size: ${(base64.length / 1024).toFixed(1)} KB`);
         resolve(base64);
       };
       reader.readAsDataURL(blob);
-    }, 'image/jpeg', 0.85);
+    }, 'image/jpeg', 0.5); // Low quality: 0.5 instead of 0.85
   });
 }
 
