@@ -577,7 +577,7 @@ ${fullText}`;
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     const requestBody = {
-      model: 'deepseek-v4-pro', // Multimodal model with vision support (flash doesn't support images)
+      model: 'deepseek-v4-flash', // Multimodal model with vision support
       messages: [
         {
           role: 'user',
@@ -586,6 +586,7 @@ ${fullText}`;
       ],
       temperature: 0,
       max_tokens: 8000,
+      response_format: { type: 'json_object' }, // Force clean JSON output without markdown
     };
 
     console.log(`Sending to DeepSeek: ${messageContent.length} content items (${(JSON.stringify(requestBody).length / 1024 / 1024).toFixed(2)} MB)`);
@@ -623,14 +624,8 @@ ${fullText}`;
       });
     }
 
-    // Parse JSON from response (handle markdown code blocks if present)
-    let jsonStr = content;
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1];
-    }
-
-    const parsed = JSON.parse(jsonStr);
+    // Parse JSON from response (response_format ensures clean JSON without markdown)
+    const parsed = JSON.parse(content);
 
     const students = parsed.estudiantes.map((e: any) => e.nombre);
     const relations = parsed.relaciones || [];
