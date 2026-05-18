@@ -3,6 +3,12 @@ import { Upload, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-reac
 import { db } from '../lib/firebase';
 import { setDoc, doc } from 'firebase/firestore';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+
+// Set up PDF.js worker from local package
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+}
 
 interface ImportSummary {
   studentCount: number;
