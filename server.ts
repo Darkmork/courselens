@@ -478,6 +478,53 @@ async function startServer() {
     }
   });
 
+  app.post("/api/ai/generate-growth-narrative", async (req, res) => {
+    try {
+      const { studentId, formResponses } = req.body;
+
+      if (!formResponses || formResponses.length < 2) {
+        return res.status(400).json({
+          error: "At least 2 form responses are required to generate a narrative",
+          status: "validation_failed",
+        });
+      }
+
+      // Get student name
+      let studentName = "el estudiante";
+      try {
+        const studentDoc = await db.collection("students").doc(studentId).get();
+        if (studentDoc.exists) {
+          studentName = studentDoc.data()?.name || "el estudiante";
+        }
+      } catch (e) {
+        console.warn("Could not fetch student name:", e);
+      }
+
+      // Generate prompt
+      const { generateGrowthNarrative } = await import("./src/lib/growthNarrative");
+      const prompt = await generateGrowthNarrative(formResponses, studentName);
+
+      // Call DeepSeek
+      const result = await ai.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 1,
+        max_tokens: 1000,
+      });
+
+      const narrative = result.choices[0].message.content || "";
+
+      res.json({ narrative });
+    } catch (error: any) {
+      console.error("Error generating narrative:", error);
+      res.status(500).json({
+        error: "Failed to generate narrative",
+        details: error.message,
+        status: "error",
+      });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
