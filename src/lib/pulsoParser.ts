@@ -555,28 +555,20 @@ Return ONLY valid JSON (no markdown, no code blocks):
 Table data from PDF:
 ${fullText}`;
 
-  const messageContent: any[] = [{ type: 'text', text: prompt }];
+  // Build complete message text including images as base64 (DeepSeek v4 requires images in text, not image_url)
+  let messageText = prompt;
 
-  // Add graph images for multimodal analysis (deepseek-v4-pro supports image_url)
   if (options?.graphPage2) {
-    messageContent.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:image/jpeg;base64,${options.graphPage2}`,
-      },
-    });
+    messageText += `\n\n[IMAGEN 1 - Relaciones positivas de trabajo (base64)]:\ndata:image/jpeg;base64,${options.graphPage2}`;
     console.log('✓ Added graph page 2 (trabajo positivo) to message');
   }
 
   if (options?.graphPage3) {
-    messageContent.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:image/jpeg;base64,${options.graphPage3}`,
-      },
-    });
+    messageText += `\n\n[IMAGEN 2 - Relaciones positivas de convivencia (base64)]:\ndata:image/jpeg;base64,${options.graphPage3}`;
     console.log('✓ Added graph page 3 (convivencia positiva) to message');
   }
+
+  const messageContent = [{ type: 'text', text: messageText }];
 
   try {
     // Create abort controller with 120 second timeout for DeepSeek request
@@ -584,11 +576,11 @@ ${fullText}`;
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     const requestBody = {
-      model: 'deepseek-v4-flash', // Multimodal model with vision support
+      model: 'deepseek-chat', // Use chat model which properly handles image analysis
       messages: [
         {
           role: 'user',
-          content: messageContent,
+          content: messageContent[0].text, // Send as plain text (DeepSeek processes base64 images in text)
         },
       ],
       temperature: 0,
