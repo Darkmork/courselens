@@ -24,43 +24,58 @@ const API_PORT = 3000;
 
 // Initialize Firebase Admin SDK
 function initializeFirebaseAdmin() {
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+  try {
+    // Check if already initialized
+    if (admin.apps.length > 0) {
+      console.log("Firebase Admin already initialized");
+      return;
+    }
 
-  if (!serviceAccountJson) {
-    // Try to use default credentials (works in Google Cloud / Vercel with service account binding)
-    try {
-      admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || "gen-lang-client-0735793190",
-      });
-      console.log("Firebase Admin initialized with default credentials");
-    } catch (error) {
-      console.error("Firebase Admin initialization failed:", error);
-      throw new Error(
-        "FIREBASE_SERVICE_ACCOUNT environment variable not set. " +
-        "Please provide Firebase service account credentials as a JSON string."
-      );
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+    if (serviceAccountJson) {
+      try {
+        const serviceAccount = JSON.parse(serviceAccountJson);
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        console.log("✓ Firebase Admin initialized with service account credentials");
+      } catch (parseError) {
+        console.error("❌ Failed to parse FIREBASE_SERVICE_ACCOUNT JSON:", parseError);
+        // Continue anyway - will fail at runtime if Firestore is needed
+      }
+    } else {
+      console.warn("⚠️  FIREBASE_SERVICE_ACCOUNT not set. Firebase operations may fail.");
+      // Try to initialize with project ID only (works if service account is bound to environment)
+      try {
+        admin.initializeApp({
+          projectId: "gen-lang-client-0735793190",
+        });
+        console.log("✓ Firebase Admin initialized with project ID only");
+      } catch (error) {
+        console.warn("⚠️  Could not initialize Firebase. Set FIREBASE_SERVICE_ACCOUNT env variable.");
+      }
     }
-  } else {
-    try {
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-      console.log("Firebase Admin initialized with service account credentials");
-    } catch (error) {
-      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT:", error);
-      throw error;
-    }
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+    // Don't throw - let the app start anyway
   }
 }
 
 async function startServer() {
   // Initialize Firebase Admin
   initializeFirebaseAdmin();
-  // Use specific Firestore database (AI Studio has a non-default database)
-  const db = admin.firestore({
-    databaseId: "ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02"
-  });
+
+  // Get Firestore instance
+  let db: any = null;
+  try {
+    if (admin.apps.length > 0) {
+      const firestoreApp = admin.app();
+      db = firestoreApp.firestore();
+    }
+  } catch (error) {
+    console.warn("Could not initialize Firestore:", error);
+  }
   const app = express();
   app.use(express.json());
   app.use(
@@ -175,6 +190,15 @@ async function startServer() {
   // POST /api/import/sociogram - Import PULSO.cl group sociogram PDF
   app.post("/api/import/sociogram", async (req, res) => {
     try {
+      // Check Firebase is initialized
+      if (!db) {
+        return res.status(500).json({
+          error: "Firebase not initialized",
+          details: "FIREBASE_SERVICE_ACCOUNT environment variable not configured in Railway",
+          status: "firebase_not_ready",
+        });
+      }
+
       // Validate file upload
       if (!req.files || !req.files.groupPdf) {
         return res.status(400).json({
