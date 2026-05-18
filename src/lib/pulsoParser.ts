@@ -622,11 +622,16 @@ ${fullText}`;
       });
     }
 
-    // Parse JSON from response (handle markdown code blocks if present)
+    // Parse JSON from response (handle markdown code blocks)
     let jsonStr = content.trim();
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1].trim();
+
+    // Remove markdown code blocks if present (```json ... ``` or ``` ... ```)
+    if (jsonStr.startsWith('```')) {
+      // Remove opening ``` (with optional 'json' language specifier)
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*/, '');
+      // Remove closing ```
+      jsonStr = jsonStr.replace(/```\s*$/, '');
+      jsonStr = jsonStr.trim();
     }
 
     let parsed;
@@ -634,7 +639,8 @@ ${fullText}`;
       parsed = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error('Failed to parse DeepSeek response:', {
-        content: content.substring(0, 500),
+        rawContent: content.substring(0, 200),
+        cleanedContent: jsonStr.substring(0, 200),
         error: parseError instanceof Error ? parseError.message : String(parseError),
       });
       throw new Error(`Invalid JSON from DeepSeek: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
