@@ -66,15 +66,17 @@ async function startServer() {
   // Initialize Firebase Admin
   initializeFirebaseAdmin();
 
-  // Get Firestore instance
+  // Get Firestore instance with correct database
   let db: any = null;
   try {
     if (admin.apps.length > 0) {
       const firestoreApp = admin.app();
-      db = firestoreApp.firestore();
+      // Specify the non-default database ID
+      db = firestoreApp.firestore("ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02");
+      console.log("✓ Firestore initialized with correct database ID");
     }
   } catch (error) {
-    console.warn("Could not initialize Firestore:", error);
+    console.warn("❌ Could not initialize Firestore:", error);
   }
   const app = express();
   app.use(express.json());
