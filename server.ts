@@ -79,6 +79,14 @@ async function startServer() {
     console.warn("❌ Could not initialize Firestore:", error);
   }
   const app = express();
+
+  // Increase timeout for long-running requests (DeepSeek API calls can take 30-60s)
+  app.use((req, res, next) => {
+    req.setTimeout(120000); // 2 minutes for full request
+    res.setTimeout(120000);
+    next();
+  });
+
   app.use(express.json());
   app.use(
     fileUpload({

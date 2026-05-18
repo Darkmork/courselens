@@ -72,9 +72,21 @@ service cloud.firestore {
     // --- Sociogram Data (Multi-year) ---
     // Allow server to write imported PULSO.cl data without user auth
     // Allow anyone to read (not sensitive data)
-    match /sociogram_{year}/{courseId} {
-      allow read: if true; // Public read - sociogram data is not sensitive
-      allow write: if true; // Server writes via Admin SDK (no user auth required)
+    match /sociogram_2024/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /sociogram_2025/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /sociogram_2026/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /sociogram_2027/{courseId} {
+      allow read: if true;
+      allow write: if true;
     }
   }
 }

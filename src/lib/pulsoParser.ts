@@ -534,6 +534,10 @@ PDF Text:
 ${fullText}`;
 
   try {
+    // Create abort controller with 120 second timeout for DeepSeek request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
@@ -551,7 +555,10 @@ ${fullText}`;
         temperature: 0.3,
         max_tokens: 8000,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.text();
