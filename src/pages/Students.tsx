@@ -21,6 +21,7 @@ import { db, storage } from '../lib/firebase';
 import { Student, RiskStatus, RelationalRole, Category, Observation } from '../types';
 import { downloadTemplate, parseFile } from '../utils/csvHelpers';
 import Markdown from 'react-markdown';
+import StudentGrowthTimeline from '../components/StudentGrowthTimeline';
 
 const Students: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -35,7 +36,7 @@ const Students: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileStudent, setProfileStudent] = useState<Student | null>(null);
-  const [activeTab, setActiveTab] = useState<'personal' | 'academico' | 'familia' | 'salud'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'academico' | 'familia' | 'salud' | 'crecimiento'>('personal');
   const [observations, setObservations] = useState<Observation[]>([]);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -519,7 +520,7 @@ const Students: React.FC = () => {
 
             {/* Tab Bar */}
             <div className="flex gap-1 px-6 pt-6 border-b border-white/10">
-              {(['personal', 'academico', 'familia', 'salud'] as const).map((tab) => (
+              {(['personal', 'academico', 'familia', 'salud', 'crecimiento'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -533,6 +534,7 @@ const Students: React.FC = () => {
                   {tab === 'academico' && 'Académico'}
                   {tab === 'familia' && 'Familia'}
                   {tab === 'salud' && 'Salud'}
+                  {tab === 'crecimiento' && '📊 Crecimiento'}
                 </button>
               ))}
             </div>
@@ -652,24 +654,31 @@ const Students: React.FC = () => {
                 </>
               )}
 
+              {activeTab === 'crecimiento' && (
+                <StudentGrowthTimeline studentId={profileStudent.id} />
+              )}
+
               {/* Sticky Save Button */}
-              <div className="sticky bottom-0 bg-[#0A0A0A] border-t border-white/10 pt-4 mt-4 flex gap-3">
-                <button
-                  type="submit"
-                  disabled={isSavingProfile}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold transition-all ${
-                    isSavingProfile
-                      ? 'bg-neutral-800 text-neutral-500'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-                  }`}
-                >
-                  <Save className="w-5 h-5" />
-                  {isSavingProfile ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
-              </div>
+              {activeTab !== 'crecimiento' && (
+                <div className="sticky bottom-0 bg-[#0A0A0A] border-t border-white/10 pt-4 mt-4 flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold transition-all ${
+                      isSavingProfile
+                        ? 'bg-neutral-800 text-neutral-500'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                    }`}
+                  >
+                    <Save className="w-5 h-5" />
+                    {isSavingProfile ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              )}
             </form>
 
             {/* Observations Section */}
+            {activeTab !== 'crecimiento' && (
             <div className="border-t border-white/10 p-6 space-y-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-blue-400" />
@@ -713,6 +722,7 @@ const Students: React.FC = () => {
                 <textarea name="text" required placeholder="Nueva observación..." rows={2} className="w-full px-4 py-2 bg-[#0A0A0A] border border-white/10 rounded-xl text-white text-sm resize-none placeholder:text-neutral-600" />
               </form>
             </div>
+            )}
 
             {/* AI Summary Section */}
             <div className="border-t border-white/10 p-6 bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500/20">
