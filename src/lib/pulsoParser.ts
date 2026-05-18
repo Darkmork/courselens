@@ -218,56 +218,6 @@ export async function parseGroupPDF(
 }
 
 /**
- * Render a PDF page to canvas
- */
-async function renderPageToCanvas(page: any): Promise<any> {
-  const viewport = page.getViewport({ scale: 2 });
-
-  // Browser environment
-  if (typeof window !== 'undefined') {
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const context = canvas.getContext('2d');
-
-    await page.render({ canvasContext: context, viewport }).promise;
-    return canvas;
-  }
-
-  // Node.js environment - use canvas library if available
-  try {
-    const { createCanvas } = await import('canvas');
-    const canvas = createCanvas(viewport.width, viewport.height);
-    const context = canvas.getContext('2d');
-
-    await page.render({ canvasContext: context, viewport }).promise;
-    return canvas;
-  } catch (e) {
-    console.warn('Canvas library not available for PDF rendering:', e);
-    return null;
-  }
-}
-
-/**
- * Convert canvas to base64 string
- */
-function canvasToBase64(canvas: any): string {
-  if (!canvas) return '';
-
-  // Browser environment
-  if (typeof canvas.toDataURL === 'function') {
-    return canvas.toDataURL('image/jpeg').split(',')[1];
-  }
-
-  // Node.js canvas
-  if (typeof canvas.toBuffer === 'function') {
-    return canvas.toBuffer('image/jpeg').toString('base64');
-  }
-
-  return '';
-}
-
-/**
  * Extract count of matches for a given pattern in text
  * @param text The text to search in
  * @param pattern The regex pattern to match
@@ -514,24 +464,8 @@ export async function parseGroupPDFWithDeepSeek(
 
   const fullText = lines_final.join('\n');
 
-  // Extract relationship graphs as images from pages 2 and 3 (if they exist)
-  const graphImages: Array<{ page: number; base64: string }> = [];
-  try {
-    if (pdf.numPages >= 2) {
-      // Page 2: Trabajo positivo relationships
-      const page2 = await pdf.getPage(2);
-      const canvas2 = await renderPageToCanvas(page2);
-      graphImages.push({ page: 2, base64: canvasToBase64(canvas2) });
-    }
-    if (pdf.numPages >= 3) {
-      // Page 3: Convivencia positiva relationships
-      const page3 = await pdf.getPage(3);
-      const canvas3 = await renderPageToCanvas(page3);
-      graphImages.push({ page: 3, base64: canvasToBase64(canvas3) });
-    }
-  } catch (e) {
-    console.warn('Could not extract graph images from PDF pages:', e);
-  }
+  // Convert PDF buffer to base64 for DeepSeek Vision
+  const pdfBase64 = pdfBuffer.toString('base64');
 
   // Call DeepSeek to interpret the table
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
@@ -539,41 +473,41 @@ export async function parseGroupPDFWithDeepSeek(
     throw new Error('DEEPSEEK_API_KEY environment variable is not set');
   }
 
-  // Build message with images if available
+  // Build message with PDF document
   const messageContent: any[] = [
     {
       type: 'text',
-      text: `You are a PULSO.cl sociogram data parser. Extract ALL student data and relationships from this PDF.
+      text: `You are a PULSO.cl sociogram data parser. Extract ALL student data and relationships from the attached PDF.
 
-CRITICAL TASK: Analyze the relationship graphs and extract EVERY connection shown.
-For each line connecting two students, create a relationship entry with:
-- from: first student name
-- to: second student name
-- tipo: "trabajo_positivo" (solid lines) or "convivencia_positiva" (dotted lines)
-- fuerza: 1-3 based on line thickness/prominence
+CRITICAL: Analyze the relationship graphs (pages 2-3) and extract EVERY connection shown:
+- Trabajo positivo: solid green lines
+- Convivencia positiva: dotted green lines
 
-Also extract the data table with autoreporte and menciones scores.
+For each line connecting two students, create:
+{
+  "from": "student_name",
+  "to": "student_name",
+  "tipo": "trabajo_positivo" | "convivencia_positiva",
+  "fuerza": 1-3 (based on prominence)
+}
 
-Return ONLY valid JSON (no markdown, no code blocks):
+Also extract page 1 table data (autoreporte scores 1-5 and menciones counts).
+
+Return ONLY valid JSON (no markdown):
 {
   "estudiantes": [{"nombre":"string","autoreporte":{"bienestar_general":1-5,"aprendizaje":1-5,"relaciones_interpersonales":1-5,"autogestion_academica":1-5,"inclusion":1-5},"menciones_positivas":{"relaciones_compartir":number,"relaciones_trabajar":number,"ayuda_demas":number,"valor_respeto":number,"valor_vocacion":number,"valor_sencillez":number,"valor_espiritu_comunitario":number,"valor_responsabilidad":number,"valor_verdad":number,"liderazgo":number,"trata_bien_incluye":number,"resuelve_conflictos":number,"total":number},"menciones_negativas":{"relaciones_negativas_compartir":number,"siente_solo":number,"pasandolo_mal":number,"relaciones_negativas_trabajar":number,"molesta_otros":number,"total":number},"rol":"Líder Positivo"|"Saludable"|"Desafío"|"No responde"}],
   "relaciones":[{"from":"name","to":"name","tipo":"trabajo_positivo"|"convivencia_positiva","fuerza":1-3}]
-}
-
-Table data:
-${fullText}`,
+}`,
+    },
+    {
+      type: 'document',
+      source: {
+        type: 'base64',
+        media_type: 'application/pdf',
+        data: pdfBase64,
+      },
     },
   ];
-
-  // Add graph images if available
-  for (const graph of graphImages) {
-    messageContent.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:image/jpeg;base64,${graph.base64}`,
-      },
-    });
-  }
 
   try {
     // Create abort controller with 120 second timeout for DeepSeek request
