@@ -117,10 +117,10 @@ async function startServer() {
     })
   );
 
-  // DeepSeek API setup
+  // DeepSeek API setup (v4-pro supports multimodal/images)
   const ai = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY || "",
-    baseURL: "https://api.deepseek.com",
+    baseURL: "https://api.deepseek.com/v1",
   });
 
   // API Routes

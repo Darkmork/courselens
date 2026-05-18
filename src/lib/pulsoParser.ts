@@ -550,10 +550,25 @@ ${fullText}`;
 
   const messageContent: any[] = [{ type: 'text', text: prompt }];
 
-  // Note: DeepSeek Chat API doesn't support image_url yet
-  // Graphs are received but not used (fallback to text analysis)
-  if (options?.graphPage2 || options?.graphPage3) {
-    console.log('ℹ️  Graph images received but DeepSeek Chat API does not support image_url. Using text analysis instead.');
+  // Add graph images for multimodal analysis (deepseek-v4-pro supports image_url)
+  if (options?.graphPage2) {
+    messageContent.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${options.graphPage2}`,
+      },
+    });
+    console.log('✓ Added graph page 2 (trabajo positivo) to message');
+  }
+
+  if (options?.graphPage3) {
+    messageContent.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${options.graphPage3}`,
+      },
+    });
+    console.log('✓ Added graph page 3 (convivencia positiva) to message');
   }
 
   try {
@@ -562,7 +577,7 @@ ${fullText}`;
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     const requestBody = {
-      model: 'deepseek-chat',
+      model: 'deepseek-v4-pro', // Multimodal model with vision support
       messages: [
         {
           role: 'user',
