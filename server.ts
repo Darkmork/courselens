@@ -68,15 +68,26 @@ async function startServer() {
 
   // Get Firestore instance with correct database
   let db: any = null;
+  const DATABASE_ID = "ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02";
   try {
     if (admin.apps.length > 0) {
       const firestoreApp = admin.app();
       // Specify the non-default database ID (must be an object with databaseId property)
-      db = firestoreApp.firestore({ databaseId: "ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02" });
-      console.log("✓ Firestore initialized with correct database ID");
+      db = firestoreApp.firestore({ databaseId: DATABASE_ID });
+
+      // Test read to verify database is accessible
+      try {
+        const testDoc = await db.collection("_test").doc("_ping").get();
+        console.log("✓ Firestore database accessible (read test succeeded)");
+      } catch (testError: any) {
+        console.warn(`⚠️  Firestore read test failed (DB may not exist or no permissions): ${testError?.code || testError?.message}`);
+      }
+
+      console.log(`✓ Firestore initialized with database ID: ${DATABASE_ID}`);
+      console.log(`✓ Using service account: ${process.env.FIREBASE_SERVICE_ACCOUNT ? "YES" : "NO (projectId only)"}`);
     }
   } catch (error) {
-    console.warn("❌ Could not initialize Firestore:", error);
+    console.error("❌ Could not initialize Firestore:", error);
   }
   const app = express();
 
@@ -301,11 +312,24 @@ async function startServer() {
       };
 
       // Save to Firestore using Admin SDK
-      await db.collection(`sociogram_${year}`).doc(courseId).set(sociogramData);
+      try {
+        console.log(`Attempting to save to collection: sociogram_${year}, doc: ${courseId}`);
+        console.log(`Data size: ${JSON.stringify(sociogramData).length} bytes`);
 
-      console.log(
-        `Successfully saved sociogram for course ${courseId} at sociogram_${year}/${courseId}`
-      );
+        await db.collection(`sociogram_${year}`).doc(courseId).set(sociogramData);
+
+        console.log(
+          `✓ Successfully saved sociogram for course ${courseId} at sociogram_${year}/${courseId}`
+        );
+      } catch (firestoreError: any) {
+        console.error("Firestore save error details:", {
+          code: firestoreError?.code,
+          message: firestoreError?.message,
+          details: firestoreError?.details,
+          fullError: firestoreError
+        });
+        throw firestoreError;
+      }
 
       // Return success response
       res.json({
