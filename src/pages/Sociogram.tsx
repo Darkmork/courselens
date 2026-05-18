@@ -231,6 +231,18 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       });
 
       console.log('[Sociogram] Cytoscape initialized successfully');
+
+      // Apply layout and fit to view
+      setTimeout(() => {
+        try {
+          cytoscapeInstance.layout({ name: 'cose', animate: true, padding: 50 }).run();
+          cytoscapeInstance.fit(undefined, 50);
+          console.log('[Sociogram] Layout and fit applied');
+        } catch (layoutError) {
+          console.error('[Sociogram] Layout error:', layoutError);
+        }
+      }, 100);
+
       setCy(cytoscapeInstance);
     } catch (error) {
       console.error('[Sociogram] Failed to initialize Cytoscape:', error);
@@ -287,7 +299,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       </header>
 
       <div className="flex-1 relative bg-transparent">
-        <div ref={containerRef} className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+        <div ref={containerRef} className="absolute inset-0 z-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px', width: '100%', height: '100%' }} />
         
         {/* Floating Metrics Overlay */}
         <div className="absolute top-6 left-6 w-64 space-y-4 pointer-events-none">
