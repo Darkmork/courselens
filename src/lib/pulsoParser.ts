@@ -484,17 +484,24 @@ TASK 1: Extract student data from the data table
 
 TASK 2: Extract relationships - THIS IS THE MOST IMPORTANT
 ${options?.graphPage2 || options?.graphPage3 ? `
-The images below show the relationship graphs:
-- Image 1 (if present): "Relaciones positivas de trabajo" - solid green lines showing work relationships
-- Image 2 (if present): "Relaciones positivas de convivencia" - dotted green lines showing social relationships
+The images below are sociogram graphs showing RELATIONSHIP CONNECTIONS between students:
+- Image 1 (if provided): Positive work relationships (trabajo_positivo) - shown as lines/arrows connecting student names
+- Image 2 (if provided): Positive social relationships (convivencia_positiva) - shown as lines/arrows connecting student names
 
-Analyze the graphs carefully and extract EVERY connection shown:
-- For each line connecting two students, create a relationship entry
-- tipo should be "trabajo_positivo" for work relationships or "convivencia_positiva" for social relationships
-- fuerza (1-3) based on line prominence/thickness
+CRITICAL: Analyze each graph image VERY CAREFULLY:
+1. Identify all student names/nodes in the graph
+2. Look for EVERY line, arrow, or connection between any two students
+3. For each connection you see between Student A and Student B, extract it as:
+   - from: "Student A name" (exactly as shown in the graph)
+   - to: "Student B name" (exactly as shown in the graph)
+   - tipo: "trabajo_positivo" if from Image 1, or "convivencia_positiva" if from Image 2
+   - fuerza: 1-3 based on line thickness/prominence (thicker = stronger)
+
+IMPORTANT: These are visual connections shown as lines in the graphs. Extract EVERY visible line/arrow connection.
+Even if there is only 1 connection, include it. Do not skip connections or assume none exist.
 ` : `
-The PDF contains relationship graphs (pages 2-3) showing connections between students.
-Look for patterns in the text that indicate relationships.
+The PDF contains relationship graphs in later pages showing connections between students.
+Try to extract any relationships visible from the text table.
 `}
 
 Return ONLY valid JSON (no markdown, no code blocks):
