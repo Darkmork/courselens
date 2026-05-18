@@ -477,6 +477,16 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                                              .filter(v => typeof v === 'number')
                                              .reduce((a: number, b: any) => a + b, 0) || 0;
 
+                    // Calculate autoreporte average if it's an object
+                    let autoreporteScore = 0;
+                    if (typeof student.autoreporte === 'number') {
+                      autoreporteScore = student.autoreporte;
+                    } else if (typeof student.autoreporte === 'object' && student.autoreporte) {
+                      const scores = Object.values(student.autoreporte)
+                        .filter(v => typeof v === 'number') as number[];
+                      autoreporteScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+                    }
+
                     const isSelected = selectedStudent?.id === student.id;
 
                     return (
@@ -502,10 +512,10 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
-                          {student.autoreporte ? (
+                          {autoreporteScore > 0 ? (
                             <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 border border-blue-500/30">
                               <span className="font-bold text-blue-400 text-xs font-mono">
-                                {typeof student.autoreporte === 'number' ? student.autoreporte.toFixed(1) : student.autoreporte}
+                                {autoreporteScore.toFixed(1)}
                               </span>
                             </div>
                           ) : (
