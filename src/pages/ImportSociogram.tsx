@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { setDoc, doc } from 'firebase/firestore';
 
 interface ImportSummary {
   studentCount: number;
@@ -82,8 +84,17 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         setImportMessage(data.error || 'La importación falló');
         console.error('Import error:', data);
       } else {
+        // Server returned parsed data - now save to Firestore using client SDK
+        setImportMessage('Guardando datos en Firestore...');
+
+        if (data.data) {
+          const docRef = doc(db, `sociogram_${year}`, courseId);
+          await setDoc(docRef, data.data);
+          console.log(`✓ Sociogram saved to sociogram_${year}/${courseId}`);
+        }
+
         setImportStatus('success');
-        setImportMessage(`✓ ${data.message}`);
+        setImportMessage(`✓ ${data.message} y guardado en base de datos`);
         if (data.summary) {
           setImportSummary(data.summary);
         }

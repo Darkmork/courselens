@@ -321,30 +321,15 @@ async function startServer() {
         metricas,
       };
 
-      // Save to Firestore using Admin SDK
-      try {
-        console.log(`Attempting to save to collection: sociogram_${year}, doc: ${courseId}`);
-        console.log(`Data size: ${JSON.stringify(sociogramData).length} bytes`);
+      console.log(
+        `✓ Parsed sociogram data ready (${estudiantes.length} students, ${relaciones.length} relations)`
+      );
 
-        await db.collection(`sociogram_${year}`).doc(courseId).set(sociogramData);
-
-        console.log(
-          `✓ Successfully saved sociogram for course ${courseId} at sociogram_${year}/${courseId}`
-        );
-      } catch (firestoreError: any) {
-        console.error("Firestore save error details:", {
-          code: firestoreError?.code,
-          message: firestoreError?.message,
-          details: firestoreError?.details,
-          fullError: firestoreError
-        });
-        throw firestoreError;
-      }
-
-      // Return success response
+      // Return parsed data - client will save to Firestore using SDK
       res.json({
         success: true,
-        message: `Sociograma ${year} imported successfully`,
+        message: `Sociograma ${year} parsed successfully`,
+        data: sociogramData,
         summary: {
           year: parseInt(year),
           courseId,
@@ -352,7 +337,7 @@ async function startServer() {
           relationCount: relaciones.length,
           metrics: metricas,
         },
-        note: 'Check server logs for token usage details from DeepSeek',
+        note: 'Client will save data to Firestore using SDK',
       });
     } catch (error) {
       console.error("Error importing sociogram:", error);
