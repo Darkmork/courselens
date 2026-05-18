@@ -464,50 +464,85 @@ export async function parseGroupPDFWithDeepSeek(
 
   const fullText = lines_final.join('\n');
 
-  // Convert PDF buffer to base64 for DeepSeek Vision
-  const pdfBase64 = pdfBuffer.toString('base64');
-
   // Call DeepSeek to interpret the table
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
   if (!deepseekApiKey) {
     throw new Error('DEEPSEEK_API_KEY environment variable is not set');
   }
 
-  // Build message with PDF document
-  const messageContent: any[] = [
-    {
-      type: 'text',
-      text: `You are a PULSO.cl sociogram data parser. Extract ALL student data and relationships from the attached PDF.
+  // Build message content
+  const prompt = `You are a PULSO.cl sociogram data parser. Extract ALL student data and relationships from the PDF text below.
 
-CRITICAL: Analyze the relationship graphs (pages 2-3) and extract EVERY connection shown:
-- Trabajo positivo: solid green lines
-- Convivencia positiva: dotted green lines
+TASK 1: Extract student data from the summary table
+- Student names
+- Autoreporte scores (5 dimensions: 1-5 scale)
+- Menciones counts (positive and negative)
+- Student role (Líder Positivo, Desafío, No responde, Saludable)
 
-For each line connecting two students, create:
+TASK 2: Extract relationships
+The PDF contains relationship graphs. Even if you cannot see the exact graph visually, look for:
+- Student pairs mentioned together
+- Patterns in mentions (if student A has many positive mentions, they likely have relationships)
+- Any explicit relationship data in the text
+
+Create relationship entries with:
+- from: first student name
+- to: second student name
+- tipo: "trabajo_positivo" or "convivencia_positiva" (infer from context)
+- fuerza: 1-3 (based on mention frequency or strength)
+
+Return ONLY valid JSON (no markdown, no code blocks):
 {
-  "from": "student_name",
-  "to": "student_name",
-  "tipo": "trabajo_positivo" | "convivencia_positiva",
-  "fuerza": 1-3 (based on prominence)
+  "estudiantes": [
+    {
+      "nombre": "string",
+      "autoreporte": {
+        "bienestar_general": 1-5,
+        "aprendizaje": 1-5,
+        "relaciones_interpersonales": 1-5,
+        "autogestion_academica": 1-5,
+        "inclusion": 1-5
+      },
+      "menciones_positivas": {
+        "relaciones_compartir": number,
+        "relaciones_trabajar": number,
+        "ayuda_demas": number,
+        "valor_respeto": number,
+        "valor_vocacion": number,
+        "valor_sencillez": number,
+        "valor_espiritu_comunitario": number,
+        "valor_responsabilidad": number,
+        "valor_verdad": number,
+        "liderazgo": number,
+        "trata_bien_incluye": number,
+        "resuelve_conflictos": number,
+        "total": number
+      },
+      "menciones_negativas": {
+        "relaciones_negativas_compartir": number,
+        "siente_solo": number,
+        "pasandolo_mal": number,
+        "relaciones_negativas_trabajar": number,
+        "molesta_otros": number,
+        "total": number
+      },
+      "rol": "Líder Positivo" | "Saludable" | "Desafío" | "No responde"
+    }
+  ],
+  "relaciones": [
+    {
+      "from": "student_name",
+      "to": "student_name",
+      "tipo": "trabajo_positivo" | "convivencia_positiva",
+      "fuerza": 1
+    }
+  ]
 }
 
-Also extract page 1 table data (autoreporte scores 1-5 and menciones counts).
+PDF Text Content:
+${fullText}`;
 
-Return ONLY valid JSON (no markdown):
-{
-  "estudiantes": [{"nombre":"string","autoreporte":{"bienestar_general":1-5,"aprendizaje":1-5,"relaciones_interpersonales":1-5,"autogestion_academica":1-5,"inclusion":1-5},"menciones_positivas":{"relaciones_compartir":number,"relaciones_trabajar":number,"ayuda_demas":number,"valor_respeto":number,"valor_vocacion":number,"valor_sencillez":number,"valor_espiritu_comunitario":number,"valor_responsabilidad":number,"valor_verdad":number,"liderazgo":number,"trata_bien_incluye":number,"resuelve_conflictos":number,"total":number},"menciones_negativas":{"relaciones_negativas_compartir":number,"siente_solo":number,"pasandolo_mal":number,"relaciones_negativas_trabajar":number,"molesta_otros":number,"total":number},"rol":"Líder Positivo"|"Saludable"|"Desafío"|"No responde"}],
-  "relaciones":[{"from":"name","to":"name","tipo":"trabajo_positivo"|"convivencia_positiva","fuerza":1-3}]
-}`,
-    },
-    {
-      type: 'document',
-      source: {
-        type: 'base64',
-        media_type: 'application/pdf',
-        data: pdfBase64,
-      },
-    },
-  ];
+  const messageContent = [{ type: 'text', text: prompt }];
 
   try {
     // Create abort controller with 120 second timeout for DeepSeek request
