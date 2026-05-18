@@ -66,24 +66,23 @@ async function startServer() {
   // Initialize Firebase Admin
   initializeFirebaseAdmin();
 
-  // Get Firestore instance with correct database
+  // Get Firestore instance
   let db: any = null;
-  const DATABASE_ID = "ai-studio-d6f02050-bc9d-4a7d-a7a3-b7ea6ef62a02";
   try {
     if (admin.apps.length > 0) {
       const firestoreApp = admin.app();
-      // Specify the non-default database ID (must be an object with databaseId property)
-      db = firestoreApp.firestore({ databaseId: DATABASE_ID });
+      // Use default database (where service account has full permissions)
+      db = firestoreApp.firestore();
 
       // Test read to verify database is accessible
       try {
-        const testDoc = await db.collection("_test").doc("_ping").get();
-        console.log("✓ Firestore database accessible (read test succeeded)");
+        const testDoc = await db.collection("students").limit(1).get();
+        console.log(`✓ Firestore database accessible (found ${testDoc.size} students)`);
       } catch (testError: any) {
-        console.warn(`⚠️  Firestore read test failed (DB may not exist or no permissions): ${testError?.code || testError?.message}`);
+        console.warn(`⚠️  Firestore read test failed: ${testError?.code || testError?.message}`);
       }
 
-      console.log(`✓ Firestore initialized with database ID: ${DATABASE_ID}`);
+      console.log("✓ Firestore initialized with default database");
       console.log(`✓ Using service account: ${process.env.FIREBASE_SERVICE_ACCOUNT ? "YES" : "NO (projectId only)"}`);
     }
   } catch (error) {
