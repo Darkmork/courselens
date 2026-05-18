@@ -21,6 +21,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
   const [sociogramData, setSociogramData] = useState<SociogramData | null>(null);
   const [isLoadingSociogram, setIsLoadingSociogram] = useState(true);
   const [hasNoData, setHasNoData] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
 
   // Default course ID (should match ImportSociogram component)
   const courseId = 'course-1';
@@ -212,14 +213,19 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                 if (tipo === 'convivencia_negativa') return '#dc2626';
                 return '#666';
               },
-              'width': (ele: any) => ele.data('fuerza') * 1.5,
+              'width': (ele: any) => ele.data('fuerza') * 2,
               'line-style': (ele: any) => {
                 const tipo = ele.data('tipo');
-                return tipo.includes('negativo') ? 'dashed' : 'solid';
+                // Trabajo = solid, Convivencia = dotted
+                if (tipo === 'trabajo_positivo' || tipo === 'trabajo_negativo') return 'solid';
+                if (tipo === 'convivencia_positiva' || tipo === 'convivencia_negativa') return 'dotted';
+                return 'solid';
               },
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
-              'opacity': 0.7
+              'opacity': 0.8,
+              'text-opacity': 0.8,
+              'font-size': 9
             }
           }
         ],
@@ -231,6 +237,24 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       });
 
       console.log('[Sociogram] Cytoscape initialized successfully');
+
+      // Add node click listener to select student
+      cytoscapeInstance.on('tap', 'node', (evt) => {
+        const node = evt.target;
+        const studentId = node.data('id');
+        const student = sociogramData?.estudiantes.find((s: any) => s.id === studentId);
+        if (student) {
+          setSelectedStudent(student);
+          console.log('[Sociogram] Selected student:', student.nombre);
+        }
+      });
+
+      // Click elsewhere to deselect
+      cytoscapeInstance.on('tap', (evt) => {
+        if (evt.target === cytoscapeInstance) {
+          setSelectedStudent(null);
+        }
+      });
 
       // Apply layout and fit to view
       setTimeout(() => {
@@ -244,11 +268,11 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       }, 100);
 
       setCy(cytoscapeInstance);
+
+      return () => cytoscapeInstance.destroy();
     } catch (error) {
       console.error('[Sociogram] Failed to initialize Cytoscape:', error);
     }
-
-    return () => cytoscapeInstance.destroy();
   }, [sociogramData]);
 
   const resetLayout = () => {
@@ -298,10 +322,11 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
         />
       </header>
 
-      <div className="flex-1 relative bg-transparent">
-        <div ref={containerRef} className="absolute inset-0 z-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px', width: '100%', height: '100%' }} />
-        
-        {/* Floating Metrics Overlay */}
+      <div className="flex-1 flex flex-col relative bg-transparent overflow-hidden">
+        <div className="flex-1 relative">
+          <div ref={containerRef} className="absolute inset-0 z-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px', width: '100%', height: '100%' }} />
+
+          {/* Floating Metrics Overlay */}
         <div className="absolute top-6 left-6 w-64 space-y-4 pointer-events-none">
           <div className="bg-[#111111]/80 backdrop-blur-md p-5 rounded-3xl border border-white/10 shadow-xl pointer-events-auto">
             <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider font-mono">Salud del Curso</h4>
@@ -348,19 +373,52 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
           </div>
 
           <div className="bg-[#111111]/80 backdrop-blur-md p-5 rounded-3xl border border-white/10 shadow-xl pointer-events-auto">
-            <h4 className="text-xs font-bold text-neutral-400 mb-4 uppercase tracking-widest font-mono border-b border-white/10 pb-2">Leyenda</h4>
+            <h4 className="text-xs font-bold text-neutral-400 mb-4 uppercase tracking-widest font-mono border-b border-white/10 pb-2">Leyenda Roles</h4>
+            <ul className="space-y-3 mb-4 pb-4 border-b border-white/10">
+              <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
+                <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_8px_#10b981]" /> Líder Positivo
+              </li>
+              <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
+                <div className="w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_8px_#8b5cf6]" /> Saludable
+              </li>
+              <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
+                <div className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444]" /> Desafío
+              </li>
+              <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
+                <div className="w-3 h-3 bg-gray-500 rounded-full shadow-[0_0_8px_#94a3b8]" /> No responde
+              </li>
+            </ul>
+            <h4 className="text-xs font-bold text-neutral-400 mb-3 uppercase tracking-widest font-mono">Relaciones</h4>
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
-                <div className="w-2 h-2 bg-blue-400 rounded-full shadow-[0_0_8px_#60a5fa]" /> Líder
+                <div className="h-0.5 w-4 bg-green-500 shadow-[0_0_6px_#10b981]" /> Trabajo Positivo
               </li>
               <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
-                <div className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]" /> Conexión Saludable
+                <div className="h-0.5 w-4 bg-red-500 shadow-[0_0_6px_#ef4444]" /> Trabajo Negativo
               </li>
               <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
-                <div className="w-2 h-2 bg-slate-400 rounded-full shadow-[0_0_8px_#94a3b8]" /> Aislado
+                <svg className="w-4 h-0.5" viewBox="0 0 16 1" preserveAspectRatio="none">
+                  <circle cx="2" cy="0.5" r="0.4" fill="#3b82f6" />
+                  <circle cx="4" cy="0.5" r="0.4" fill="#3b82f6" />
+                  <circle cx="6" cy="0.5" r="0.4" fill="#3b82f6" />
+                  <circle cx="8" cy="0.5" r="0.4" fill="#3b82f6" />
+                  <circle cx="10" cy="0.5" r="0.4" fill="#3b82f6" />
+                  <circle cx="12" cy="0.5" r="0.4" fill="#3b82f6" />
+                  <circle cx="14" cy="0.5" r="0.4" fill="#3b82f6" />
+                </svg>
+                <span>Convivencia Positiva</span>
               </li>
               <li className="flex items-center gap-3 text-xs text-neutral-300 font-mono">
-                <div className="w-2 h-2 bg-red-400 rounded-full shadow-[0_0_8px_#f87171]" /> En Conflicto
+                <svg className="w-4 h-0.5" viewBox="0 0 16 1" preserveAspectRatio="none">
+                  <circle cx="2" cy="0.5" r="0.4" fill="#dc2626" />
+                  <circle cx="4" cy="0.5" r="0.4" fill="#dc2626" />
+                  <circle cx="6" cy="0.5" r="0.4" fill="#dc2626" />
+                  <circle cx="8" cy="0.5" r="0.4" fill="#dc2626" />
+                  <circle cx="10" cy="0.5" r="0.4" fill="#dc2626" />
+                  <circle cx="12" cy="0.5" r="0.4" fill="#dc2626" />
+                  <circle cx="14" cy="0.5" r="0.4" fill="#dc2626" />
+                </svg>
+                <span>Convivencia Negativa</span>
               </li>
             </ul>
           </div>
@@ -386,6 +444,89 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
               </div>
               <h3 className="text-xl font-bold text-white mb-2 font-display">Sin Datos de Sociograma</h3>
               <p className="text-neutral-500 max-w-xs mx-auto text-sm">No hay datos de sociograma para {selectedYear}. Importa un reporte de PULSO.cl desde la sección Importar.</p>
+            </div>
+          </div>
+        )}
+        </div>
+
+        {/* Student Data Table */}
+        {sociogramData && !isLoadingSociogram && (
+          <div className="border-t border-white/10 bg-[#111111]/50 backdrop-blur-sm overflow-hidden flex flex-col max-h-64">
+            <div className="px-6 py-3 bg-[#0a0a0a]/80 border-b border-white/5 shrink-0">
+              <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono">Datos de Estudiantes</h4>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-[#1a1a1a]/90 border-b border-white/5">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-bold text-neutral-300 text-xs uppercase tracking-wider font-mono">Nombre</th>
+                    <th className="px-4 py-2 text-left font-bold text-neutral-300 text-xs uppercase tracking-wider font-mono">Rol</th>
+                    <th className="px-4 py-2 text-center font-bold text-neutral-300 text-xs uppercase tracking-wider font-mono">Autoreporte</th>
+                    <th className="px-4 py-2 text-center font-bold text-neutral-300 text-xs uppercase tracking-wider font-mono">Menciones +</th>
+                    <th className="px-4 py-2 text-center font-bold text-neutral-300 text-xs uppercase tracking-wider font-mono">Menciones -</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {sociogramData.estudiantes.map((student: any) => {
+                    const positiveMentions = student.menciones_positivas?.total ||
+                                           Object.values(student.menciones_positivas || {})
+                                             .filter(v => typeof v === 'number')
+                                             .reduce((a: number, b: any) => a + b, 0) || 0;
+                    const negativeMentions = student.menciones_negativas?.total ||
+                                           Object.values(student.menciones_negativas || {})
+                                             .filter(v => typeof v === 'number')
+                                             .reduce((a: number, b: any) => a + b, 0) || 0;
+
+                    const isSelected = selectedStudent?.id === student.id;
+
+                    return (
+                      <tr
+                        key={student.id}
+                        onClick={() => setSelectedStudent(student)}
+                        className={`cursor-pointer transition-all hover:bg-white/5 ${
+                          isSelected ? 'bg-blue-500/20 border-l-2 border-blue-500' : 'bg-transparent'
+                        }`}
+                      >
+                        <td className="px-4 py-2 font-mono text-neutral-100">{student.nombre}</td>
+                        <td className="px-4 py-2 text-xs font-mono">
+                          <span className={`px-2 py-1 rounded-full ${
+                            student.rol === 'Líder Positivo'
+                              ? 'bg-green-500/20 text-green-300'
+                              : student.rol === 'Saludable'
+                              ? 'bg-purple-500/20 text-purple-300'
+                              : student.rol === 'Desafío'
+                              ? 'bg-red-500/20 text-red-300'
+                              : 'bg-gray-500/20 text-gray-300'
+                          }`}>
+                            {student.rol || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          {student.autoreporte ? (
+                            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 border border-blue-500/30">
+                              <span className="font-bold text-blue-400 text-xs font-mono">
+                                {typeof student.autoreporte === 'number' ? student.autoreporte.toFixed(1) : student.autoreporte}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-neutral-500">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500/20 text-green-300 font-bold text-xs font-mono">
+                            {positiveMentions}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500/20 text-red-300 font-bold text-xs font-mono">
+                            {negativeMentions}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
