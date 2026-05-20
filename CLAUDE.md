@@ -12,9 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Backend:** Express.js (Node.js) running via `tsx` in dev, `esbuild` in production
 - **Database:** Firebase Firestore (NoSQL)
 - **Authentication:** Firebase Auth (Google Login)
-- **AI:** Google Gemini 1.5 Flash (integrated server-side via `@google/genai`)
+- **AI:** Google Gemini 1.5 Flash (integrated server-side via `@google/genai`), DeepSeek API (growth narratives)
 - **Visualization:** Cytoscape.js (sociogram), Recharts (analytics), Lucide icons
-- **Data:** PapaParse (CSV), xlsx, FileSaver (exports)
+- **Data:** PapaParse (CSV), xlsx, FileSaver (exports), CSV file upload via express-fileupload
 - **PDF Parsing:** pdfjs-dist (text extraction), pdf-parse (server-side)
 - **File Upload:** express-fileupload (multipart form data)
 
@@ -31,15 +31,22 @@ npm run clean        # Remove dist/ and server.js
 ## Architecture
 
 ### Frontend Structure
-- `src/pages/` — Main page components (Dashboard, Students, Sociogram, Conflicts, CourseLife, Spiritual, Projects)
+- `src/pages/` — Main page components (Dashboard, Students, Sociogram, Conflicts, CourseLife, Spiritual, Projects, ImportForms)
   - **Sociogram** — Relational network visualization with real Firestore data, YearSelector for multi-year navigation
   - **ImportSociogram** — PDF upload form for PULSO.cl group + individual reports
+  - **ImportForms** — CSV import for Google Forms responses (timeline data: inicio_III_medio, fin_I_semestre, inicio_IV_medio)
+  - **Students** — Includes Crecimiento tab with StudentGrowthTimeline, FormResponseCard, GrowthComparative components
 - `src/components/` — Reusable UI components (Login, Layout, Logo)
   - **YearSelector** — Year navigation tabs (2024-2027) with prev/next buttons
+  - **StudentGrowthTimeline** — Visual timeline of growth responses over time
+  - **FormResponseCard** — Card display for individual form responses
+  - **GrowthComparative** — Comparison view across multiple form responses
 - `src/lib/firebase.ts` — Firebase client configuration
 - `src/lib/pulsoParser.ts` — PDF text extraction for PULSO.cl reports (parseGroupPDF, parseIndividualPDF)
+- `src/lib/csvParser.ts` — CSV validation and parsing for Google Forms responses
+- `src/lib/growthNarrative.ts` — Prompt building for AI growth narrative generation
 - `src/lib/sociogramMetrics.ts` — Metric calculation (cohesion, fragmentation, leadership, isolation)
-- `src/types/index.ts` — TypeScript type definitions (StudentSociogramData, SociogramRelation, SociogramMetrics, SociogramData)
+- `src/types/index.ts` — TypeScript type definitions (StudentSociogramData, SociogramRelation, SociogramMetrics, SociogramData, FormResponse)
 - `src/utils/` — Helper functions (CSV parsing, etc.)
 
 ### Backend (server.ts)
@@ -52,6 +59,14 @@ Express server handling:
   - Accepts: groupPdf, individualPdf, year, courseId
   - Returns: studentCount, relationCount, metrics (cohesion, fragmentation, leadership, isolation)
   - Saves to `sociogram_${year}/${courseId}` collection
+- **`POST /api/import/form-responses`** — Google Forms response import (CSV file upload)
+  - Accepts: csvFile, formType (inicio_III_medio | fin_I_semestre | inicio_IV_medio), courseId
+  - Returns: importedCount, validationErrors[], summary of parsed responses
+  - Saves to `form_responses/${courseId}` collection with timestamp and form type
+- **`POST /api/ai/generate-growth-narrative`** — AI-powered growth narrative generation
+  - Accepts: formResponses (array), studentName
+  - Uses DeepSeek API to generate personalized growth narratives
+  - Returns: narrative text describing student evolution, patterns, and future projections
 - Vite middleware in dev, static serving in production
 
 ### Database (Firestore)
@@ -75,6 +90,10 @@ Security rules in `firestore.rules` enforce auth and teacher-based access contro
 Create `.env.local` (or `.env` for production):
 ```
 GEMINI_API_KEY=<your-gemini-api-key>
+DEEPSEEK_API_KEY=<your-deepseek-api-key>  # For growth narrative generation
+FIREBASE_API_KEY=<firebase-api-key>
+FIREBASE_AUTH_DOMAIN=<firebase-auth-domain>
+FIREBASE_PROJECT_ID=<firebase-project-id>
 APP_URL=<deployed-url>  # For production
 ```
 
@@ -106,7 +125,9 @@ The Sociogram feature has been enhanced with real data import from PULSO.cl plat
 4. Sociogram page displays real network visualization with year selector
 5. Multi-year comparison shows how course dynamics change over time
 
-**Known Issue:** PDF text extraction (parseGroupPDF, parseIndividualPDF) needs layout-aware parsing. Current regex-based approach fails with continuous text streams. **TODO:** Implement pdf-parse backend or Y-position-based text reconstruction for accurate student/relation extraction.
+**Known Issues & TODOs:**
+- PDF text extraction (parseGroupPDF, parseIndividualPDF) needs layout-aware parsing. Current regex-based approach fails with continuous text streams. **TODO:** Implement pdf-parse backend or Y-position-based text reconstruction for accurate student/relation extraction.
+- Form response CSV import currently maps to standard PersonalityTrait set; custom form fields may need schema updates in `FormResponse` type.
 
 ## Development Notes
 
@@ -115,3 +136,6 @@ The Sociogram feature has been enhanced with real data import from PULSO.cl plat
 - All CSS is utility-first Tailwind; custom styles in `src/index.css`
 - AI responses are parsed as JSON or Markdown depending on the endpoint
 - Firestore listeners (onSnapshot) are used for real-time data updates; always clean up subscriptions in useEffect return
+- CSV parsing uses PapaParse for validation and type conversion; check `src/lib/csvParser.ts` for form-response schema
+- Growth narratives use DeepSeek API with Spanish language prompts; responses are typically 250-400 words
+- Form response types (FormResponse) have PersonalityTrait enum mapping to Google Forms question structure
