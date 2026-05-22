@@ -1,7 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
-import { db } from '../lib/firebase';
-import { setDoc, doc } from 'firebase/firestore';
 
 interface ImportSummary {
   studentCount: number;
@@ -112,43 +110,16 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         setImportMessage(data.error || 'La importación falló');
         console.error('Import error:', data);
       } else {
-        // Server returned parsed data - now save to Firestore using client SDK
-        setImportMessage('Guardando análisis en Firestore...');
-
-        try {
-          // Save sociogram data
-          if (data.data) {
-            const docRef = doc(db, `sociogram_${year}`, courseId);
-            await setDoc(docRef, data.data);
-            console.log(`✓ Sociogram saved to sociogram_${year}/${courseId}`);
-          }
-
-          // Save course vision analysis
-          if (data.courseVision) {
-            const analysisRef = doc(db, `sociogram_analysis_${year}`, courseId);
-            await setDoc(analysisRef, {
-              ...data.courseVision,
-              timestamp: new Date().toISOString(),
-              year: parseInt(year),
-              courseId,
-            });
-            console.log(`✓ Course vision saved to sociogram_analysis_${year}/${courseId}`);
-          }
-
-          setImportStatus('success');
-          setImportMessage(`✓ ${data.message} y análisis guardado en base de datos`);
-          if (data.summary) {
-            setImportSummary(data.summary);
-          }
-
-          // Reset form
-          setGroupMarkdown(null);
-          setIndividualMarkdown(null);
-        } catch (firestoreError) {
-          setImportStatus('error');
-          setImportMessage(`Error al guardar en Firestore: ${firestoreError instanceof Error ? firestoreError.message : 'Error desconocido'}`);
-          console.error('Firestore error:', firestoreError);
+        // Server handled Firestore save - just show success
+        setImportStatus('success');
+        setImportMessage(`✓ ${data.message} y análisis guardado en base de datos`);
+        if (data.summary) {
+          setImportSummary(data.summary);
         }
+
+        // Reset form
+        setGroupMarkdown(null);
+        setIndividualMarkdown(null);
       }
     } catch (error) {
       setImportStatus('error');

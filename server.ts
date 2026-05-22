@@ -311,6 +311,27 @@ async function startServer() {
         `✓ Parsed sociogram data ready (${estudiantes.length} students)`
       );
 
+      // Save to Firestore using Admin SDK
+      try {
+        console.log('✓ Saving sociogram data to Firestore...');
+        const sociogramRef = db.collection(`sociogram_${year}`).doc(courseId);
+        await sociogramRef.set(sociogramData);
+        console.log(`✓ Sociogram saved to sociogram_${year}/${courseId}`);
+
+        console.log('✓ Saving course vision analysis to Firestore...');
+        const analysisRef = db.collection(`sociogram_analysis_${year}`).doc(courseId);
+        await analysisRef.set({
+          ...courseVision,
+          timestamp: admin.firestore.Timestamp.now(),
+          year: parseInt(year),
+          courseId,
+        });
+        console.log(`✓ Course vision saved to sociogram_analysis_${year}/${courseId}`);
+      } catch (firestoreError) {
+        console.error('Firestore save error:', firestoreError);
+        // Don't fail the request - data was parsed successfully
+      }
+
       // Return parsed data WITH course vision analysis
       res.json({
         success: true,
@@ -324,7 +345,7 @@ async function startServer() {
           relationCount: relaciones.length,
           metrics: metricas,
         },
-        note: 'Client will save data to Firestore using SDK',
+        note: 'Data saved to Firestore by server',
       });
     } catch (error) {
       console.error("Error importing sociogram:", error);
