@@ -1,14 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { setDoc, doc } from 'firebase/firestore';
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
-
-// Set up PDF.js worker from local package
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
-}
 
 interface ImportSummary {
   studentCount: number;
@@ -26,67 +19,26 @@ interface ImportSociogramProps {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-// Set up PDF.js worker
-if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-}
-
-async function renderPdfPageToImage(file: File, pageNum: number): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-  if (pageNum > pdf.numPages) {
-    throw new Error(`PDF has only ${pdf.numPages} pages, requested page ${pageNum}`);
-  }
-
-  const page = await pdf.getPage(pageNum);
-  const viewport = page.getViewport({ scale: 3.0 });
-
-  const canvas = document.createElement('canvas');
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
-
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Could not get canvas context');
-
-  await page.render({ canvasContext: context, viewport, canvas }).promise;
-
-  // Convert to base64 JPEG with low quality to reduce size
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      if (!blob) throw new Error('Failed to convert canvas to blob');
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        console.log(`Graph image size: ${(base64.length / 1024).toFixed(1)} KB`);
-        resolve(base64);
-      };
-      reader.readAsDataURL(blob);
-    }, 'image/jpeg', 0.75); // Higher quality: 0.75 for better OCR readability
-  });
-}
-
 export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   courseId = 'course-1',
   onBack
 }) => {
-  const [groupPdf, setGroupPdf] = useState<File | null>(null);
+  const [markdownFile, setMarkdownFile] = useState<File | null>(null);
   const [year, setYear] = useState<string>('2025');
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState<string>('');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
-  const [graphImages, setGraphImages] = useState<{ page2?: string; page3?: string }>({});
 
   // File input ref for resetting
-  const groupPdfInputRef = useRef<HTMLInputElement>(null);
+  const markdownInputRef = useRef<HTMLInputElement>(null);
 
-  const handleGroupPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMarkdownChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
+    if (!file.type.includes('text') && !file.name.endsWith('.md')) {
       setImportStatus('error');
-      setImportMessage('Por favor selecciona un archivo PDF válido para el reporte grupal');
+      setImportMessage('Por favor selecciona un archivo Markdown (.md) válido');
       return;
     }
 
@@ -96,62 +48,29 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
       return;
     }
 
-    setGroupPdf(file);
+    setMarkdownFile(file);
     setImportStatus('idle');
-    setImportMessage('Extrayendo gráficos de relaciones...');
-
-    // Render relationship graph pages (2-3) to images
-    try {
-      const images: { page2?: string; page3?: string } = {};
-
-      try {
-        images.page2 = await renderPdfPageToImage(file, 2);
-        console.log('✓ Rendered page 2 (trabajo positivo graph)');
-      } catch (err) {
-        console.warn('Could not render page 2:', err);
-      }
-
-      try {
-        images.page3 = await renderPdfPageToImage(file, 3);
-        console.log('✓ Rendered page 3 (convivencia positiva graph)');
-      } catch (err) {
-        console.warn('Could not render page 3:', err);
-      }
-
-      setGraphImages(images);
-      setImportMessage('✓ PDF cargado. Gráficos extraídos.');
-    } catch (error) {
-      console.error('Error rendering PDF pages:', error);
-      setImportMessage('PDF cargado, pero no se pudieron extraer los gráficos (continuará sin ellos)');
-    }
+    setImportMessage('✓ Archivo Markdown cargado y listo para importar');
   };
 
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!groupPdf || !year || !courseId) {
+    if (!markdownFile || !year || !courseId) {
       setImportStatus('error');
       setImportMessage('Todos los campos son requeridos');
       return;
     }
 
     setImportStatus('loading');
-    setImportMessage('Cargando y analizando PDF con DeepSeek...');
+    setImportMessage('Analizando archivo Markdown con DeepSeek...');
 
     try {
       const formData = new FormData();
-      formData.append('groupPdf', groupPdf);
+      formData.append('markdownFile', markdownFile);
       formData.append('year', year);
       formData.append('courseId', courseId);
-
-      // Add rendered graph images if available
-      if (graphImages.page2) {
-        formData.append('graphPage2', graphImages.page2);
-      }
-      if (graphImages.page3) {
-        formData.append('graphPage3', graphImages.page3);
-      }
 
       const response = await fetch('/api/import/sociogram', {
         method: 'POST',
@@ -181,7 +100,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         }
 
         // Reset form
-        setGroupPdf(null);
+        setMarkdownFile(null);
       }
     } catch (error) {
       setImportStatus('error');
@@ -191,13 +110,13 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   };
 
   const handleReset = () => {
-    setGroupPdf(null);
+    setMarkdownFile(null);
     setImportStatus('idle');
     setImportMessage('');
     setImportSummary(null);
 
     // Clear file input
-    if (groupPdfInputRef.current) groupPdfInputRef.current.value = '';
+    if (markdownInputRef.current) markdownInputRef.current.value = '';
   };
 
   return (
@@ -217,7 +136,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           )}
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Importar Sociograma</h1>
-            <p className="text-gray-400">Sube los reportes PDF de PULSO.cl para importar datos de sociograma</p>
+            <p className="text-gray-400">Sube el archivo Markdown generado por MarkItDown para importar datos de sociograma</p>
           </div>
         </div>
 
@@ -238,28 +157,28 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
             </select>
           </div>
 
-          {/* Group PDF Upload */}
+          {/* Markdown File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-200 mb-2">
-              Reporte Grupal (PDF)
+              Reporte Sociograma (Markdown)
             </label>
             <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
-                ref={groupPdfInputRef}
+                ref={markdownInputRef}
                 type="file"
-                accept=".pdf"
-                onChange={handleGroupPdfChange}
+                accept=".md,text/markdown,text/plain"
+                onChange={handleMarkdownChange}
                 className="hidden"
-                id="groupPdf"
+                id="markdownFile"
                 disabled={importStatus === 'loading'}
               />
-              <label htmlFor="groupPdf" className="cursor-pointer block">
+              <label htmlFor="markdownFile" className="cursor-pointer block">
                 <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
                 <p className="text-sm text-gray-300">
-                  {groupPdf ? (
-                    <span className="text-green-400 font-medium">{groupPdf.name}</span>
+                  {markdownFile ? (
+                    <span className="text-green-400 font-medium">{markdownFile.name}</span>
                   ) : (
-                    'Haz clic para seleccionar el reporte grupal'
+                    'Haz clic para seleccionar el archivo Markdown'
                   )}
                 </p>
               </label>
@@ -299,7 +218,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={importStatus === 'loading' || !groupPdf}
+              disabled={importStatus === 'loading' || !markdownFile}
               aria-label="Importar sociograma"
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             >
@@ -327,7 +246,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         <div className="mt-8 bg-blue-900/20 border border-blue-700 rounded-lg p-4 text-sm text-blue-200">
           <p className="font-medium mb-2">Archivo esperado:</p>
           <ul className="list-disc list-inside space-y-1 text-blue-300/90">
-            <li><strong>Reporte Grupal (PDF):</strong> Documento PULSO.cl que contiene la tabla resumen con todos los estudiantes, roles, autoreporte, menciones (positivas y negativas) y relaciones entre estudiantes.</li>
+            <li><strong>Reporte Sociograma (Markdown):</strong> Archivo .md generado por MarkItDown a partir del PDF de PULSO.cl. Contiene la tabla resumen con todos los estudiantes, roles, autoreporte, menciones (positivas y negativas).</li>
           </ul>
           <p className="mt-3 text-blue-300/80 text-xs">✨ El sistema usa DeepSeek AI para extraer y analizar los datos de la tabla automáticamente. Los datos se guardarán en la base de datos de la clase seleccionada.</p>
         </div>

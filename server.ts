@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
 import * as admin from "firebase-admin";
-import { parseGroupPDFWithDeepSeek } from "./src/lib/pulsoParser";
+import { parseGroupPDFWithDeepSeek, parseMarkdownSociogram } from "./src/lib/pulsoParser";
 import { calculateMetrics } from "./src/lib/sociogramMetrics";
 import type { SociogramData, SociogramRelation } from "./src/types/index";
 
@@ -218,7 +218,7 @@ async function startServer() {
     }
   });
 
-  // POST /api/import/sociogram - Import PULSO.cl group sociogram PDF
+  // POST /api/import/sociogram - Import PULSO.cl group sociogram from Markdown file
   app.post("/api/import/sociogram", async (req, res) => {
     try {
       // Check Firebase is initialized
@@ -231,9 +231,9 @@ async function startServer() {
       }
 
       // Validate file upload
-      if (!req.files || !req.files.groupPdf) {
+      if (!req.files || !req.files.markdownFile) {
         return res.status(400).json({
-          error: "groupPdf is required",
+          error: "markdownFile is required",
           status: "validation_failed",
         });
       }
@@ -246,18 +246,16 @@ async function startServer() {
         });
       }
 
-      const groupPdfFile = req.files.groupPdf as fileUpload.UploadedFile;
-      const graphPage2 = req.body.graphPage2 as string | undefined; // base64 from client
-      const graphPage3 = req.body.graphPage3 as string | undefined; // base64 from client
+      const markdownFile = req.files.markdownFile as fileUpload.UploadedFile;
 
       console.log(`Importing sociogram for course ${courseId}, year ${year}`);
-      console.log(`Graph images received: page2=${!!graphPage2}, page3=${!!graphPage3}`);
+      console.log(`Markdown file received: ${markdownFile.name}`);
 
-      // Parse group PDF using DeepSeek to extract table data and relationships
-      const parseResult = await parseGroupPDFWithDeepSeek(groupPdfFile.data, {
-        graphPage2,
-        graphPage3,
-      });
+      // Convert buffer to string
+      const markdownContent = markdownFile.data.toString('utf-8');
+
+      // Parse markdown using DeepSeek to extract table data
+      const parseResult = await parseMarkdownSociogram(markdownContent);
       const { studentData, relations: rawRelations } = parseResult;
 
       console.log(`Parsed ${studentData.length} students from group PDF via DeepSeek`);
