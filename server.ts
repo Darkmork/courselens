@@ -765,6 +765,220 @@ async function startServer() {
     }
   });
 
+  // POST /api/generate/student-narrative - Generate AI narrative for student journey
+  app.post("/api/generate/student-narrative", async (req, res) => {
+    try {
+      const { studentId, studentName, formResponses } = req.body;
+
+      if (!formResponses || formResponses.length < 2) {
+        return res.status(400).json({
+          error: "At least 2 form responses required",
+          status: "validation_failed",
+        });
+      }
+
+      // Sort by form type
+      const sorted = formResponses.sort((a: any, b: any) => {
+        const order: Record<string, number> = {
+          inicio_III_medio: 0,
+          mediados_III_medio: 1,
+          inicio_IV_medio: 2,
+        };
+        return (order[a.formType] ?? 999) - (order[b.formType] ?? 999);
+      });
+
+      const prompt = `You are an educational counselor writing a narrative about a student's personal and academic growth.
+
+Student: ${studentName}
+Academic Year: 2024
+
+Form Responses Data:
+${sorted.map((f: any, i: number) => {
+  const moment = ['Initial Reflection', 'Mid-Year Checkpoint', 'Final Consolidation'][i] || 'Response';
+  return `[${moment}]
+- Academic Performance: ${f.responses?.academic?.desempeño || 'Not provided'}
+- Emotional State: ${f.responses?.emotional?.bienestar || 'Not provided'}
+- Social Connections: ${f.responses?.social?.relacion_compañeros || 'Not provided'}
+- Vocational Interest: ${f.responses?.future?.carrera_opcion || 'Not provided'}
+- Spiritual/Values: ${f.responses?.spiritual?.importancia_fe || 'Not provided'}`;
+}).join('\n\n')}
+
+Write a compelling narrative (300-500 words) in Spanish describing ${studentName}'s journey of growth across these three moments.
+Focus on:
+1. How their self-perception changed
+2. Academic or emotional breakthroughs
+3. Relationships and social growth
+4. Vocational clarity gained
+5. Overall transformation
+
+Make it personal, warm, and reflective. Use storytelling techniques to make it memorable.`;
+
+      const result = await ai.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+
+      const narrative =
+        result.choices[0]?.message?.content || "Narrative generation failed";
+
+      // Save to Firestore if DB is available
+      if (db && studentId) {
+        try {
+          await db
+            .collection("students")
+            .doc(studentId)
+            .collection("narratives")
+            .doc("journey")
+            .set({
+              narrative,
+              generatedAt: new Date(),
+              formCount: formResponses.length,
+            });
+        } catch (dbError) {
+          console.warn("Could not save narrative to Firestore:", dbError);
+        }
+      }
+
+      res.json({
+        success: true,
+        narrative,
+        studentName,
+        studentId,
+      });
+    } catch (error: any) {
+      console.error("Error generating student narrative:", error);
+      res.status(500).json({
+        error: "Failed to generate narrative",
+        details: error.message,
+        status: "error",
+      });
+    }
+  });
+
+  // POST /api/generate/course-narrative - Generate collective course narrative
+  app.post("/api/generate/course-narrative", async (req, res) => {
+    try {
+      const { courseId, courseName, studentCount, allFormResponses } = req.body;
+
+      if (!allFormResponses || allFormResponses.length === 0) {
+        return res.status(400).json({
+          error: "Form responses are required",
+          status: "validation_failed",
+        });
+      }
+
+      // Aggregate stats
+      const academicAvg = allFormResponses
+        .filter((f: any) => f.responses?.academic?.desempeño)
+        .length;
+      const emotionalAvg = allFormResponses
+        .filter((f: any) => f.responses?.emotional?.bienestar)
+        .length;
+      const vocationalClarity = allFormResponses
+        .filter((f: any) => f.responses?.future?.carrera_opcion)
+        .length;
+
+      const prompt = `You are a school chronicler documenting the collective journey of an entire class.
+
+Course: ${courseName}
+Academic Year: 2024
+Students: ${studentCount}
+Form Responses Collected: ${allFormResponses.length}
+
+Key Statistics:
+- Students with academic performance data: ${academicAvg}
+- Students reporting emotional well-being: ${emotionalAvg}
+- Students with vocational clarity: ${vocationalClarity}
+
+Write an engaging course narrative (400-600 words) in Spanish that tells the story of this group's transformation during the year.
+
+Structure:
+1. Opening: The group's identity at the start (March)
+2. Development: Evolution and key moments (March-June)
+3. Growth: Challenges overcome and bonds formed (June-September)
+4. Conclusion: The group's maturity and readiness for the future (September)
+
+Focus on:
+- Collective achievements and challenges
+- How relationships evolved
+- Diversity of vocational choices
+- Overall cohesion and group identity
+- Hope for their future
+
+Make it inspiring, authentic, and memorable - something they'll want to read years later.`;
+
+      const result = await ai.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 1500,
+      });
+
+      const narrative =
+        result.choices[0]?.message?.content || "Narrative generation failed";
+
+      // Save to Firestore if DB is available
+      if (db && courseId) {
+        try {
+          await db
+            .collection("courses")
+            .doc(courseId)
+            .update({
+              narrative,
+              narrativeGeneratedAt: new Date(),
+              narrativeStats: {
+                studentCount,
+                formResponseCount: allFormResponses.length,
+                academicDataPoints: academicAvg,
+                emotionalDataPoints: emotionalAvg,
+                vocationalDataPoints: vocationalClarity,
+              },
+            })
+            .catch(() =>
+              // If doc doesn't exist, create it
+              db
+                .collection("courses")
+                .doc(courseId)
+                .set({
+                  name: courseName,
+                  narrative,
+                  narrativeGeneratedAt: new Date(),
+                  narrativeStats: {
+                    studentCount,
+                    formResponseCount: allFormResponses.length,
+                  },
+                })
+            );
+        } catch (dbError) {
+          console.warn("Could not save course narrative to Firestore:", dbError);
+        }
+      }
+
+      res.json({
+        success: true,
+        narrative,
+        courseName,
+        courseId,
+        stats: {
+          studentCount,
+          formResponseCount: allFormResponses.length,
+          academicDataPoints: academicAvg,
+          emotionalDataPoints: emotionalAvg,
+          vocationalDataPoints: vocationalClarity,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error generating course narrative:", error);
+      res.status(500).json({
+        error: "Failed to generate course narrative",
+        details: error.message,
+        status: "error",
+      });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

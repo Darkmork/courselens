@@ -22,6 +22,7 @@ interface CourseNarrativeProps {
   courseName: string;
   students: StudentData[];
   stats?: CourseStats;
+  allFormResponses?: any[];
   onExportBook?: () => void;
 }
 
@@ -34,14 +35,42 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
     formResponsesCount: 0,
     momentsCapured: [],
   },
+  allFormResponses = [],
   onExportBook,
 }) => {
   const [highlightedStudents, setHighlightedStudents] = useState<StudentData[]>([]);
+  const [aiNarrative, setAiNarrative] = useState<string>('');
+  const [generatingNarrative, setGeneratingNarrative] = useState(false);
 
   useEffect(() => {
     // Get top 3 students (by various metrics)
     setHighlightedStudents(students.slice(0, 3));
   }, [students]);
+
+  const generateNarrative = async () => {
+    setGeneratingNarrative(true);
+    try {
+      const response = await fetch('/api/generate/course-narrative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId,
+          courseName,
+          studentCount: stats.totalStudents,
+          allFormResponses,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setAiNarrative(data.narrative);
+      }
+    } catch (error) {
+      console.error('Error generating narrative:', error);
+    } finally {
+      setGeneratingNarrative(false);
+    }
+  };
 
   const getHealthColor = (score?: number) => {
     if (!score) return 'text-neutral-400';
@@ -82,14 +111,25 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
             )}
           </div>
 
-          {onExportBook && (
-            <button
-              onClick={onExportBook}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg transition-all shadow-lg"
-            >
-              📖 Generar Libro Digital
-            </button>
-          )}
+          <div className="flex gap-3">
+            {allFormResponses.length > 0 && !aiNarrative && (
+              <button
+                onClick={generateNarrative}
+                disabled={generatingNarrative}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-neutral-600 disabled:to-neutral-600 text-white font-bold rounded-lg transition-all shadow-lg flex items-center gap-2"
+              >
+                {generatingNarrative ? '⏳ Generando narrativa...' : '✨ Generar Narrativa IA'}
+              </button>
+            )}
+            {onExportBook && (
+              <button
+                onClick={onExportBook}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg transition-all shadow-lg"
+              >
+                📖 Generar Libro Digital
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -144,8 +184,13 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
           Narrativa del Curso
         </h2>
 
-        <div className="prose prose-invert max-w-none">
-          <div className="space-y-4 text-neutral-200 leading-relaxed">
+        {aiNarrative ? (
+          <div className="bg-gradient-to-b from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-lg p-6">
+            <p className="text-neutral-200 leading-relaxed whitespace-pre-wrap">{aiNarrative}</p>
+          </div>
+        ) : (
+          <div className="prose prose-invert max-w-none">
+            <div className="space-y-4 text-neutral-200 leading-relaxed">
             <p className="text-base">
               <span className="font-bold text-white">"{courseName}"</span> es un viaje colectivo de {stats.totalStudents} estudiantes de tercero medio que marcó un quiebre en su comprensión de sí mismos, sus relaciones y sus futuros posibles.
             </p>
@@ -165,8 +210,9 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
             <p className="text-base italic text-neutral-300 mt-6 pt-4 border-t border-white/10">
               Esta no es solo una base de datos educativa. Es un <span className="text-white font-bold">registro vivo</span> de cómo los jóvenes crecen, se transforman, y encuentran su lugar en el mundo.
             </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Student Highlights */}

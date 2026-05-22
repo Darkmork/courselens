@@ -37,6 +37,7 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
   const [sortedResponses, setSortedResponses] = useState<FormResponse[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [narrative, setNarrative] = useState<string>('');
+  const [generatingNarrative, setGeneratingNarrative] = useState(false);
 
   useEffect(() => {
     // Sort by form type order
@@ -87,6 +88,30 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
     }
   }, [formResponses]);
 
+  const generateNarrative = async () => {
+    setGeneratingNarrative(true);
+    try {
+      const response = await fetch('/api/generate/student-narrative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          studentName,
+          formResponses: sortedResponses,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setNarrative(data.narrative);
+      }
+    } catch (error) {
+      console.error('Error generating narrative:', error);
+    } finally {
+      setGeneratingNarrative(false);
+    }
+  };
+
   if (sortedResponses.length === 0) {
     return (
       <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-8 text-center">
@@ -104,14 +129,25 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
             <h2 className="text-3xl font-bold text-white mb-2">{studentName}</h2>
             <p className="text-neutral-400">Viaje de transformación académica y personal</p>
           </div>
-          {onExport && (
-            <button
-              onClick={onExport}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all"
-            >
-              Exportar Perfil
-            </button>
-          )}
+          <div className="flex gap-3">
+            {sortedResponses.length >= 2 && !narrative && (
+              <button
+                onClick={generateNarrative}
+                disabled={generatingNarrative}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600 text-white text-sm font-bold rounded-lg transition-all flex items-center gap-2"
+              >
+                {generatingNarrative ? '⏳ Generando...' : '✨ Generar Narrativa'}
+              </button>
+            )}
+            {onExport && (
+              <button
+                onClick={onExport}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all"
+              >
+                Exportar Perfil
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Quick Stats */}
