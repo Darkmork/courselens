@@ -530,18 +530,16 @@ ${fullText}`;
 }
 
 /**
- * Phase B: Extract relationships from sociogram graphs using deepseek-vl2 (vision model)
+ * Phase B: Extract relationships from sociogram graphs using Claude Vision (vision model)
  * @param options Graph images in base64 (graphPage2, graphPage3)
  * @param studentNames List of student names for reference
- * @param apiKey DeepSeek API key
  * @returns Promise with relaciones array
  */
 async function extractRelationsWithVL2(
   options: { graphPage2?: string; graphPage3?: string },
-  studentNames: string[],
-  apiKey: string
+  studentNames: string[]
 ): Promise<Array<{ from: string; to: string; tipo: string; fuerza: number }>> {
-  const PROMPT_VL2 = `Eres un experto analizando sociogramas de PULSO.cl.
+  const PROMPT_VISION = `Eres un experto analizando sociogramas de PULSO.cl.
 
 ESTRUCTURA DEL GRÁFICO:
 - Cada círculo = un estudiante. El nombre está escrito DEBAJO del círculo en 2-3 líneas.
@@ -572,67 +570,59 @@ Retorna SOLO JSON válido (sin markdown):
   // Add image 1 (página 2 - trabajo_positivo)
   if (options.graphPage2) {
     content.push({
-      type: 'image_url',
-      image_url: { url: `data:image/jpeg;base64,${options.graphPage2}` }
+      type: 'image',
+      source: { type: 'base64', media_type: 'image/jpeg', data: options.graphPage2 }
     });
     content.push({
       type: 'text',
-      text: 'IMAGEN 1: Grafo de relaciones positivas (página 2 del PDF)'
+      text: 'IMAGEN 1: Grafo de relaciones positivas de TRABAJO (página 2 del PDF PULSO.cl)'
     });
   }
 
   // Add image 2 (página 3 - convivencia_positiva)
   if (options.graphPage3) {
     content.push({
-      type: 'image_url',
-      image_url: { url: `data:image/jpeg;base64,${options.graphPage3}` }
+      type: 'image',
+      source: { type: 'base64', media_type: 'image/jpeg', data: options.graphPage3 }
     });
     content.push({
       type: 'text',
-      text: 'IMAGEN 2: Grafo de relaciones positivas (página 3 del PDF)'
+      text: 'IMAGEN 2: Grafo de relaciones positivas de CONVIVENCIA (página 3 del PDF PULSO.cl)'
     });
   }
 
   // Add instruction prompt at the end
   content.push({
     type: 'text',
-    text: PROMPT_VL2
+    text: PROMPT_VISION
   });
 
   try {
-    const requestBody = {
-      model: 'deepseek-vl2',
-      messages: [{ role: 'user', content }],
-      temperature: 0,
-      max_tokens: 20000,
-    };
-
-    console.log('✓ Sending graph analysis to DeepSeek VL2...');
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
+    // Use Anthropic SDK to call Claude Vision
+    const AnthropicSDK = await import('@anthropic-ai/sdk').then(m => m.default);
+    const client = new AnthropicSDK({
+      apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`DeepSeek VL2 API error: ${response.status} - ${error}`);
+    console.log('✓ Sending graph analysis to Claude Vision...');
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content }],
+    });
+
+    const textContent = response.content.find((c: any) => c.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text response from Claude Vision');
     }
 
-    const data = await response.json();
-    const responseContent = data.choices[0].message.content;
+    const responseContent = textContent.text;
 
     // Log token usage
-    if (data.usage) {
-      console.log(`✓ DeepSeek VL2 Token Usage:`, {
-        prompt_tokens: data.usage.prompt_tokens,
-        completion_tokens: data.usage.completion_tokens,
-        total_tokens: data.usage.total_tokens,
-      });
-    }
+    console.log(`✓ Claude Vision Token Usage:`, {
+      input_tokens: response.usage.input_tokens,
+      output_tokens: response.usage.output_tokens,
+    });
 
     // Parse JSON from response
     let jsonStr = responseContent.trim();
@@ -645,7 +635,7 @@ Retorna SOLO JSON válido (sin markdown):
     const parsed = JSON.parse(jsonStr);
     return parsed.relaciones || [];
   } catch (error) {
-    console.error('DeepSeek VL2 graph extraction failed:', error);
+    console.error('Claude Vision graph extraction failed:', error);
     // Return empty array on failure (don't throw - allow import to continue)
     return [];
   }
@@ -698,12 +688,12 @@ export async function parseGroupPDFWithDeepSeek(
     console.log('✓ Phase A: Extracting student table data with deepseek-chat...');
     const tableResult = await extractStudentTableWithDeepSeek(fullText, deepseekApiKey);
 
-    // Phase B: Extract relationships from graphs using deepseek-vl2 (only if images provided)
+    // Phase B: Extract relationships from graphs using Claude Vision (only if images provided)
     let relations: Array<{ from: string; to: string; tipo: string; fuerza: number }> = [];
     if (options?.graphPage2 || options?.graphPage3) {
-      console.log('✓ Phase B: Extracting graph relationships with deepseek-vl2...');
+      console.log('✓ Phase B: Extracting graph relationships with Claude Vision...');
       const studentNames = tableResult.estudiantes.map((e: any) => e.nombre);
-      relations = await extractRelationsWithVL2(options, studentNames, deepseekApiKey);
+      relations = await extractRelationsWithVL2(options, studentNames);
       console.log(`✓ Extracted ${relations.length} relations from graphs`);
     } else {
       console.log('⚠ Phase B: No graph images provided, skipping visual relationship extraction');
