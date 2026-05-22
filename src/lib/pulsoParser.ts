@@ -530,7 +530,7 @@ ${fullText}`;
 }
 
 /**
- * Phase B: Extract relationships from sociogram graphs using Claude Vision (vision model)
+ * Phase B: Extract relationships from sociogram graphs using Google Gemini Vision
  * @param options Graph images in base64 (graphPage2, graphPage3)
  * @param studentNames List of student names for reference
  * @returns Promise with relaciones array
@@ -539,6 +539,12 @@ async function extractRelationsWithVL2(
   options: { graphPage2?: string; graphPage3?: string },
   studentNames: string[]
 ): Promise<Array<{ from: string; to: string; tipo: string; fuerza: number }>> {
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  if (!geminiApiKey) {
+    console.warn('⚠ GEMINI_API_KEY not set, skipping graph analysis');
+    return [];
+  }
+
   const PROMPT_VISION = `Eres un experto analizando sociogramas de PULSO.cl.
 
 ESTRUCTURA DEL GRÁFICO:
@@ -565,64 +571,69 @@ Retorna SOLO JSON válido (sin markdown):
   ]
 }`;
 
-  const content: Array<any> = [];
+  const content: Array<any> = [{ type: 'text', text: PROMPT_VISION }];
 
-  // Add image 1 (página 2 - trabajo_positivo)
+  // Add images to Gemini request
   if (options.graphPage2) {
     content.push({
       type: 'image',
-      source: { type: 'base64', media_type: 'image/jpeg', data: options.graphPage2 }
-    });
-    content.push({
-      type: 'text',
-      text: 'IMAGEN 1: Grafo de relaciones positivas de TRABAJO (página 2 del PDF PULSO.cl)'
+      image: {
+        image_bytes: {
+          data: options.graphPage2,
+          mime_type: 'image/jpeg',
+        },
+      },
     });
   }
 
-  // Add image 2 (página 3 - convivencia_positiva)
   if (options.graphPage3) {
     content.push({
       type: 'image',
-      source: { type: 'base64', media_type: 'image/jpeg', data: options.graphPage3 }
-    });
-    content.push({
-      type: 'text',
-      text: 'IMAGEN 2: Grafo de relaciones positivas de CONVIVENCIA (página 3 del PDF PULSO.cl)'
+      image: {
+        image_bytes: {
+          data: options.graphPage3,
+          mime_type: 'image/jpeg',
+        },
+      },
     });
   }
 
-  // Add instruction prompt at the end
-  content.push({
-    type: 'text',
-    text: PROMPT_VISION
-  });
-
   try {
-    // Use Anthropic SDK to call Claude Vision
-    const AnthropicSDK = await import('@anthropic-ai/sdk').then(m => m.default);
-    const client = new AnthropicSDK({
-      apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY,
-    });
+    console.log('✓ Sending graph analysis to Google Gemini Vision...');
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: content }],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 2000,
+          },
+        }),
+      }
+    );
 
-    console.log('✓ Sending graph analysis to Claude Vision...');
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content }],
-    });
-
-    const textContent = response.content.find((c: any) => c.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
-      throw new Error('No text response from Claude Vision');
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${error}`);
     }
 
-    const responseContent = textContent.text;
+    const data = await response.json();
+    const responseContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Log token usage
-    console.log(`✓ Claude Vision Token Usage:`, {
-      input_tokens: response.usage.input_tokens,
-      output_tokens: response.usage.output_tokens,
-    });
+    if (!responseContent) {
+      throw new Error('No text response from Gemini');
+    }
+
+    // Log usage
+    if (data.usageMetadata) {
+      console.log(`✓ Gemini Token Usage:`, {
+        prompt_tokens: data.usageMetadata.promptTokenCount,
+        output_tokens: data.usageMetadata.candidatesTokenCount,
+      });
+    }
 
     // Parse JSON from response
     let jsonStr = responseContent.trim();
@@ -635,7 +646,7 @@ Retorna SOLO JSON válido (sin markdown):
     const parsed = JSON.parse(jsonStr);
     return parsed.relaciones || [];
   } catch (error) {
-    console.error('Claude Vision graph extraction failed:', error);
+    console.error('Gemini Vision graph extraction failed:', error);
     // Return empty array on failure (don't throw - allow import to continue)
     return [];
   }
@@ -688,10 +699,10 @@ export async function parseGroupPDFWithDeepSeek(
     console.log('✓ Phase A: Extracting student table data with deepseek-chat...');
     const tableResult = await extractStudentTableWithDeepSeek(fullText, deepseekApiKey);
 
-    // Phase B: Extract relationships from graphs using Claude Vision (only if images provided)
+    // Phase B: Extract relationships from graphs using Gemini Vision (only if images provided)
     let relations: Array<{ from: string; to: string; tipo: string; fuerza: number }> = [];
     if (options?.graphPage2 || options?.graphPage3) {
-      console.log('✓ Phase B: Extracting graph relationships with Claude Vision...');
+      console.log('✓ Phase B: Extracting graph relationships with Gemini Vision...');
       const studentNames = tableResult.estudiantes.map((e: any) => e.nombre);
       relations = await extractRelationsWithVL2(options, studentNames);
       console.log(`✓ Extracted ${relations.length} relations from graphs`);
