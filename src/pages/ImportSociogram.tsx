@@ -80,9 +80,9 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if ((!groupMarkdown && !individualMarkdown) || !year || !courseId) {
+    if (!groupMarkdown || !individualMarkdown || !year || !courseId) {
       setImportStatus('error');
-      setImportMessage('Se requiere al menos un archivo Markdown (grupal o individual)');
+      setImportMessage('Se requieren ambos archivos: grupal e individual');
       return;
     }
 
@@ -113,23 +113,42 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         console.error('Import error:', data);
       } else {
         // Server returned parsed data - now save to Firestore using client SDK
-        setImportMessage('Guardando datos en Firestore...');
+        setImportMessage('Guardando análisis en Firestore...');
 
-        if (data.data) {
-          const docRef = doc(db, `sociogram_${year}`, courseId);
-          await setDoc(docRef, data.data);
-          console.log(`✓ Sociogram saved to sociogram_${year}/${courseId}`);
+        try {
+          // Save sociogram data
+          if (data.data) {
+            const docRef = doc(db, `sociogram_${year}`, courseId);
+            await setDoc(docRef, data.data);
+            console.log(`✓ Sociogram saved to sociogram_${year}/${courseId}`);
+          }
+
+          // Save course vision analysis
+          if (data.courseVision) {
+            const analysisRef = doc(db, `sociogram_analysis_${year}`, courseId);
+            await setDoc(analysisRef, {
+              ...data.courseVision,
+              timestamp: new Date().toISOString(),
+              year: parseInt(year),
+              courseId,
+            });
+            console.log(`✓ Course vision saved to sociogram_analysis_${year}/${courseId}`);
+          }
+
+          setImportStatus('success');
+          setImportMessage(`✓ ${data.message} y análisis guardado en base de datos`);
+          if (data.summary) {
+            setImportSummary(data.summary);
+          }
+
+          // Reset form
+          setGroupMarkdown(null);
+          setIndividualMarkdown(null);
+        } catch (firestoreError) {
+          setImportStatus('error');
+          setImportMessage(`Error al guardar en Firestore: ${firestoreError instanceof Error ? firestoreError.message : 'Error desconocido'}`);
+          console.error('Firestore error:', firestoreError);
         }
-
-        setImportStatus('success');
-        setImportMessage(`✓ ${data.message} y guardado en base de datos`);
-        if (data.summary) {
-          setImportSummary(data.summary);
-        }
-
-        // Reset form
-        setGroupMarkdown(null);
-        setIndividualMarkdown(null);
       }
     } catch (error) {
       setImportStatus('error');
@@ -167,7 +186,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           )}
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Importar Sociograma</h1>
-            <p className="text-gray-400">Sube archivos Markdown (grupal o individual) generados por MarkItDown</p>
+            <p className="text-gray-400">Sube ambos archivos Markdown para generar análisis completo del curso</p>
           </div>
         </div>
 
@@ -191,7 +210,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           {/* Group Markdown File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-200 mb-2">
-              Reporte Grupal (Markdown) - Opcional
+              Reporte Grupal (Markdown) - Requerido
             </label>
             <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
@@ -277,8 +296,8 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={importStatus === 'loading' || (!groupMarkdown && !individualMarkdown)}
-              aria-label="Importar sociograma"
+              disabled={importStatus === 'loading' || !groupMarkdown || !individualMarkdown}
+              aria-label="Importar sociograma y generar análisis"
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             >
               {importStatus === 'loading' ? (
@@ -303,12 +322,19 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
 
         {/* Help Text */}
         <div className="mt-8 bg-blue-900/20 border border-blue-700 rounded-lg p-4 text-sm text-blue-200">
-          <p className="font-medium mb-2">Archivos esperados:</p>
+          <p className="font-medium mb-2">Archivos requeridos (ambos):</p>
           <ul className="list-disc list-inside space-y-2 text-blue-300/90">
-            <li><strong>Reporte Grupal (Markdown):</strong> Archivo .md generado por MarkItDown. Contiene tabla resumen con estudiantes, roles, autoreporte y menciones. <em>Estructura más desorganizada</em></li>
-            <li><strong>Reporte Individual (Markdown) - RECOMENDADO:</strong> Archivo .md con datos por estudiante (preferido). Contiene autoreporte detallado y menciones más limpias por estudiante. <em>Mejor precisión en extracción</em></li>
+            <li><strong>Reporte Grupal (Markdown):</strong> Archivo .md generado por MarkItDown del PDF grupal de PULSO.cl</li>
+            <li><strong>Reporte Individual (Markdown):</strong> Archivo .md generado por MarkItDown del PDF individual de PULSO.cl</li>
           </ul>
-          <p className="mt-3 text-blue-300/80 text-xs">✨ El sistema usa DeepSeek AI para extraer automáticamente: autoreporte (5 dimensiones), menciones positivas (12 categorías) y negativas (7 categorías). Si cargas ambos, usa el individual (mejor estructura).</p>
+          <p className="mt-3 text-blue-300/80 text-xs">✨ <strong>Qué genera el análisis:</strong></p>
+          <ul className="list-disc list-inside space-y-1 text-blue-300/80 text-xs ml-2">
+            <li>Visión narrativa del curso (dinámicas, clima relacional)</li>
+            <li>Estudiantes destacados (líderes, alto bienestar)</li>
+            <li>Estudiantes que requieren atención (riesgos, aislamiento)</li>
+            <li>Tabla de datos con autoreporte y menciones por estudiante</li>
+            <li>Matriz de riesgos (bienestar vs menciones negativas)</li>
+          </ul>
         </div>
       </div>
     </div>

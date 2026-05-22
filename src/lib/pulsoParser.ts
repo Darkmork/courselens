@@ -743,6 +743,198 @@ export async function parseMarkdownSociogram(
 }
 
 /**
+ * Analyze sociogram data to generate course vision and insights
+ * @param groupStudents Array of students from group report
+ * @param individualStudents Array of students from individual report
+ * @param apiKey DeepSeek API key
+ * @returns Promise with course analysis
+ */
+async function analyzeCourseVisionWithDeepSeek(
+  groupStudents: Array<any>,
+  individualStudents: Array<any>,
+  apiKey: string
+): Promise<{
+  course_vision: string;
+  highlighted_students: Array<{ nombre: string; reason: string; strengths: string[] }>;
+  at_risk_students: Array<{ nombre: string; reason: string; concerns: string[] }>;
+  dynamics_summary: string;
+}> {
+  // Combine and deduplicate students
+  const studentMap = new Map();
+
+  for (const student of [...groupStudents, ...individualStudents]) {
+    if (!studentMap.has(student.nombre.toLowerCase())) {
+      studentMap.set(student.nombre.toLowerCase(), student);
+    }
+  }
+
+  const allStudents = Array.from(studentMap.values());
+
+  const prompt = `Eres un experto en dinámicas educacionales y bienestar estudiantil. Analiza los datos PULSO.cl de un curso y proporciona:
+
+DATOS DEL CURSO (${allStudents.length} estudiantes):
+${allStudents.map(s => `
+${s.nombre}:
+- Rol: ${s.rol}
+- Autoreporte bienestar: ${s.autoreporte?.bienestar_general || 0}/5
+- Autoreporte relaciones: ${s.autoreporte?.relaciones_interpersonales || 0}/5
+- Menciones positivas TOTAL: ${s.menciones_positivas?.total || 0}
+- Menciones negativas TOTAL: ${s.menciones_negativas?.total || 0}
+- Menciones específicas negativas: siente_solo=${s.menciones_negativas?.siente_solo || 0}, molesta_otros=${s.menciones_negativas?.molesta_otros || 0}, pasandolo_mal=${s.menciones_negativas?.pasandolo_mal || 0}, excluye_trata_mal=${s.menciones_negativas?.excluye_trata_mal || 0}
+`).join('\n')}
+
+PROPORCIONA UN ANÁLISIS EN ESPAÑOL:
+
+1. VISIÓN DEL CURSO (2-3 párrafos):
+- Dinámicas generales del grupo
+- Clima relacional (positivo/tenso/mixto)
+- Fortalezas colectivas
+- Desafíos principales
+
+2. ESTUDIANTES DESTACADOS (máx 5):
+- Selecciona estudiantes con: alto bienestar, muchas menciones positivas, liderazgo, buen rol
+- Para cada uno: nombre, razón, 2-3 fortalezas específicas
+
+3. ESTUDIANTES QUE REQUIEREN ATENCIÓN (máx 5):
+- Selecciona con: bajo bienestar, menciones negativas, aislamiento, comportamientos de riesgo
+- Para cada uno: nombre, razón, 2-3 preocupaciones específicas
+
+4. RESUMEN DE DINÁMICAS:
+- Subgrupos observados
+- Posibles tensiones
+- Oportunidades de intervención
+
+RETORNA JSON VÁLIDO:
+{
+  "course_vision": "texto 2-3 párrafos sobre dinámicas del curso",
+  "highlighted_students": [
+    {"nombre": "string", "reason": "por qué destaca", "strengths": ["fortaleza1", "fortaleza2", "fortaleza3"]}
+  ],
+  "at_risk_students": [
+    {"nombre": "string", "reason": "por qué requiere atención", "concerns": ["preocupación1", "preocupación2", "preocupación3"]}
+  ],
+  "dynamics_summary": "análisis de subgrupos y dinámicas"
+}`;
+
+  try {
+    const requestBody = {
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 4000,
+    };
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`DeepSeek API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+
+    let jsonStr = content.trim();
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*/, '');
+      jsonStr = jsonStr.replace(/```\s*$/, '');
+      jsonStr = jsonStr.trim();
+    }
+
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error('DeepSeek vision analysis failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Parse both group and individual markdown reports and generate course vision
+ * @param groupContent Group markdown content
+ * @param individualContent Individual markdown content
+ * @returns Promise with combined student data and course analysis
+ */
+export async function parseSociogramWithAnalysis(
+  groupContent: string | null,
+  individualContent: string | null
+): Promise<{
+  students: string[];
+  studentData: Array<any>;
+  courseVision: {
+    course_vision: string;
+    highlighted_students: Array<{ nombre: string; reason: string; strengths: string[] }>;
+    at_risk_students: Array<{ nombre: string; reason: string; concerns: string[] }>;
+    dynamics_summary: string;
+  };
+}> {
+  const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+  if (!deepseekApiKey) {
+    throw new Error('DEEPSEEK_API_KEY environment variable is not set');
+  }
+
+  try {
+    let groupStudents: Array<any> = [];
+    let individualStudents: Array<any> = [];
+
+    // Parse both reports if available
+    if (groupContent) {
+      console.log('✓ Parsing group report...');
+      const groupResult = await extractStudentTableWithDeepSeek(groupContent, deepseekApiKey);
+      groupStudents = groupResult.estudiantes;
+    }
+
+    if (individualContent) {
+      console.log('✓ Parsing individual report...');
+      const individualResult = await extractIndividualReportWithDeepSeek(individualContent, deepseekApiKey);
+      individualStudents = individualResult.estudiantes;
+    }
+
+    if (groupStudents.length === 0 && individualStudents.length === 0) {
+      throw new Error('No student data extracted from either report');
+    }
+
+    // Combine students (prefer individual data if duplicate)
+    const studentMap = new Map();
+
+    for (const student of groupStudents) {
+      studentMap.set(student.nombre.toLowerCase(), student);
+    }
+
+    for (const student of individualStudents) {
+      // Overwrite with individual data if present (better structure)
+      studentMap.set(student.nombre.toLowerCase(), student);
+    }
+
+    const allStudents = Array.from(studentMap.values());
+    console.log(`✓ Combined ${allStudents.length} unique students`);
+
+    // Generate course vision analysis
+    console.log('✓ Generating course vision analysis...');
+    const courseVision = await analyzeCourseVisionWithDeepSeek(
+      groupStudents,
+      individualStudents,
+      deepseekApiKey
+    );
+
+    return {
+      students: allStudents.map(s => s.nombre),
+      studentData: allStudents,
+      courseVision,
+    };
+  } catch (error) {
+    console.error('Sociogram analysis failed:', error);
+    throw error;
+  }
+}
+
+/**
  * Parse PULSO.cl group PDF using DeepSeek Vision/Chat to extract table data
  * Converts PDF text to structured student data via AI interpretation
  * @param pdfBuffer Buffer containing the PDF file data

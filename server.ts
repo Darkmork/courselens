@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
 import * as admin from "firebase-admin";
-import { parseGroupPDFWithDeepSeek, parseMarkdownSociogram } from "./src/lib/pulsoParser";
+import { parseGroupPDFWithDeepSeek, parseMarkdownSociogram, parseSociogramWithAnalysis } from "./src/lib/pulsoParser";
 import { calculateMetrics } from "./src/lib/sociogramMetrics";
 import type { SociogramData, SociogramRelation } from "./src/types/index";
 
@@ -218,7 +218,7 @@ async function startServer() {
     }
   });
 
-  // POST /api/import/sociogram - Import PULSO.cl sociogram from Markdown files (group and/or individual)
+  // POST /api/import/sociogram - Import PULSO.cl sociogram from Markdown files (requires both group and individual)
   app.post("/api/import/sociogram", async (req, res) => {
     try {
       // Check Firebase is initialized
@@ -230,10 +230,10 @@ async function startServer() {
         });
       }
 
-      // Validate file upload - accept either groupMarkdown or individualMarkdown
-      if (!req.files || (!req.files.markdownFile && !req.files.groupMarkdown && !req.files.individualMarkdown)) {
+      // Validate file upload - now require BOTH files
+      if (!req.files || !req.files.groupMarkdown || !req.files.individualMarkdown) {
         return res.status(400).json({
-          error: "At least one markdown file is required (markdownFile, groupMarkdown, or individualMarkdown)",
+          error: "Both group and individual markdown files are required for course analysis",
           status: "validation_failed",
         });
       }
@@ -246,38 +246,22 @@ async function startServer() {
         });
       }
 
-      // Support both old (markdownFile) and new naming (groupMarkdown, individualMarkdown)
-      const markdownFile =
-        (req.files.markdownFile as fileUpload.UploadedFile) ||
-        (req.files.groupMarkdown as fileUpload.UploadedFile);
-
-      const individualMarkdownFile = req.files.individualMarkdown as fileUpload.UploadedFile | undefined;
+      const groupMarkdownFile = req.files.groupMarkdown as fileUpload.UploadedFile;
+      const individualMarkdownFile = req.files.individualMarkdown as fileUpload.UploadedFile;
 
       console.log(`Importing sociogram for course ${courseId}, year ${year}`);
-      if (markdownFile) console.log(`Group markdown file: ${markdownFile.name}`);
-      if (individualMarkdownFile) console.log(`Individual markdown file: ${individualMarkdownFile.name}`);
+      console.log(`Group markdown file: ${groupMarkdownFile.name}`);
+      console.log(`Individual markdown file: ${individualMarkdownFile.name}`);
 
       // Convert buffers to strings
-      const groupContent = markdownFile ? markdownFile.data.toString('utf-8') : null;
-      const individualContent = individualMarkdownFile ? individualMarkdownFile.data.toString('utf-8') : null;
+      const groupContent = groupMarkdownFile.data.toString('utf-8');
+      const individualContent = individualMarkdownFile.data.toString('utf-8');
 
-      // Parse both files if available, use individual report if available (better structure)
-      let parseResult;
-      if (individualContent) {
-        console.log('✓ Using individual report (preferred)');
-        parseResult = await parseMarkdownSociogram(individualContent, true);
-      } else if (groupContent) {
-        console.log('✓ Using group report');
-        parseResult = await parseMarkdownSociogram(groupContent, false);
-      } else {
-        return res.status(400).json({
-          error: "No valid markdown content found",
-          status: "validation_failed",
-        });
-      }
-      const { studentData, relations: rawRelations } = parseResult;
+      // Parse both files and generate course analysis
+      const analysisResult = await parseSociogramWithAnalysis(groupContent, individualContent);
+      const { studentData, courseVision } = analysisResult;
 
-      console.log(`Parsed ${studentData.length} students from group PDF via DeepSeek`);
+      console.log(`Parsed ${studentData.length} students from markdown reports`);
 
       // Convert studentData to StudentSociogramData format with IDs
       const estudiantes = studentData.map((student: any) => ({
@@ -297,29 +281,8 @@ async function startServer() {
         },
       }));
 
-      // Build relations from parsed data
+      // Build relations (empty for now - no visual edges from markdown)
       const relaciones: SociogramRelation[] = [];
-      const allowedTipos = ['trabajo_positivo', 'convivencia_positiva', 'trabajo_negativo', 'convivencia_negativa'];
-
-      for (const rel of rawRelations) {
-        const fromStudent = estudiantes.find(
-          (s: any) => s.nombre.toLowerCase().trim() === rel.from.toLowerCase().trim()
-        );
-        const toStudent = estudiantes.find(
-          (s: any) => s.nombre.toLowerCase().trim() === rel.to.toLowerCase().trim()
-        );
-
-        if (fromStudent && toStudent && allowedTipos.includes(rel.tipo)) {
-          relaciones.push({
-            from_id: fromStudent.id,
-            to_id: toStudent.id,
-            tipo: rel.tipo as SociogramRelation['tipo'],
-            fuerza: Math.max(1, Math.min(3, rel.count)),
-          });
-        }
-      }
-
-      console.log(`Created ${relaciones.length} relations`);
 
       // Calculate metrics
       const metricas = calculateMetrics({
@@ -345,14 +308,15 @@ async function startServer() {
       };
 
       console.log(
-        `✓ Parsed sociogram data ready (${estudiantes.length} students, ${relaciones.length} relations)`
+        `✓ Parsed sociogram data ready (${estudiantes.length} students)`
       );
 
-      // Return parsed data - client will save to Firestore using SDK
+      // Return parsed data WITH course vision analysis
       res.json({
         success: true,
-        message: `Sociograma ${year} parsed successfully`,
+        message: `Sociograma ${year} analyzed successfully`,
         data: sociogramData,
+        courseVision,
         summary: {
           year: parseInt(year),
           courseId,
