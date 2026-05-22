@@ -94,5 +94,24 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    // --- Sociogram Analysis (Course Vision) ---
+    // Multi-year course analysis and insights
+    match /sociogram_analysis_2024/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /sociogram_analysis_2025/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /sociogram_analysis_2026/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /sociogram_analysis_2027/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }
