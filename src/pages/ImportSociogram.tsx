@@ -10,6 +10,13 @@ interface ImportSummary {
   };
 }
 
+interface CourseVision {
+  course_vision: string;
+  highlighted_students: Array<{ nombre: string; reason: string; strengths: string[] }>;
+  at_risk_students: Array<{ nombre: string; reason: string; concerns: string[] }>;
+  dynamics_summary: string;
+}
+
 interface ImportSociogramProps {
   courseId?: string;
   onBack?: () => void;
@@ -27,6 +34,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState<string>('');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  const [courseVision, setCourseVision] = useState<CourseVision | null>(null);
 
   // File input refs for resetting
   const groupInputRef = useRef<HTMLInputElement>(null);
@@ -110,11 +118,14 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         setImportMessage(data.error || 'La importación falló');
         console.error('Import error:', data);
       } else {
-        // Server handled Firestore save - just show success
+        // Server handled Firestore save - show success and analysis
         setImportStatus('success');
         setImportMessage(`✓ ${data.message} y análisis guardado en base de datos`);
         if (data.summary) {
           setImportSummary(data.summary);
+        }
+        if (data.courseVision) {
+          setCourseVision(data.courseVision);
         }
 
         // Reset form
@@ -134,6 +145,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
     setImportStatus('idle');
     setImportMessage('');
     setImportSummary(null);
+    setCourseVision(null);
 
     // Clear file inputs
     if (groupInputRef.current) groupInputRef.current.value = '';
@@ -259,6 +271,63 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
                     <p>Fragmentación: {importSummary.metrics.fragmentacion.toFixed(1)}%</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Course Vision Analysis */}
+          {courseVision && importStatus === 'success' && (
+            <div className="mt-6 space-y-6 bg-gray-900/50 rounded-lg border border-gray-700 p-6">
+              {/* Course Vision Narrative */}
+              <div>
+                <h3 className="text-lg font-bold text-white mb-3">📋 Visión del Curso</h3>
+                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{courseVision.course_vision}</p>
+              </div>
+
+              {/* Highlighted Students */}
+              {courseVision.highlighted_students.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 mb-3">⭐ Estudiantes Destacados</h3>
+                  <div className="space-y-3">
+                    {courseVision.highlighted_students.map((student, idx) => (
+                      <div key={idx} className="bg-green-900/20 border border-green-700 rounded p-3">
+                        <p className="font-semibold text-white">{student.nombre}</p>
+                        <p className="text-sm text-gray-300 mt-1">{student.reason}</p>
+                        <ul className="text-xs text-gray-400 mt-2 space-y-1">
+                          {student.strengths.map((strength, i) => (
+                            <li key={i}>• {strength}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* At-Risk Students */}
+              {courseVision.at_risk_students.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-bold text-orange-400 mb-3">⚠️ Estudiantes que Requieren Atención</h3>
+                  <div className="space-y-3">
+                    {courseVision.at_risk_students.map((student, idx) => (
+                      <div key={idx} className="bg-orange-900/20 border border-orange-700 rounded p-3">
+                        <p className="font-semibold text-white">{student.nombre}</p>
+                        <p className="text-sm text-gray-300 mt-1">{student.reason}</p>
+                        <ul className="text-xs text-gray-400 mt-2 space-y-1">
+                          {student.concerns.map((concern, i) => (
+                            <li key={i}>• {concern}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamics Summary */}
+              <div>
+                <h3 className="text-lg font-bold text-blue-400 mb-3">🔗 Dinámicas del Grupo</h3>
+                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{courseVision.dynamics_summary}</p>
               </div>
             </div>
           )}
