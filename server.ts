@@ -218,7 +218,7 @@ async function startServer() {
     }
   });
 
-  // POST /api/import/sociogram - Import PULSO.cl group sociogram from Markdown file
+  // POST /api/import/sociogram - Import PULSO.cl sociogram from Markdown files (group and/or individual)
   app.post("/api/import/sociogram", async (req, res) => {
     try {
       // Check Firebase is initialized
@@ -230,10 +230,10 @@ async function startServer() {
         });
       }
 
-      // Validate file upload
-      if (!req.files || !req.files.markdownFile) {
+      // Validate file upload - accept either groupMarkdown or individualMarkdown
+      if (!req.files || (!req.files.markdownFile && !req.files.groupMarkdown && !req.files.individualMarkdown)) {
         return res.status(400).json({
-          error: "markdownFile is required",
+          error: "At least one markdown file is required (markdownFile, groupMarkdown, or individualMarkdown)",
           status: "validation_failed",
         });
       }
@@ -246,16 +246,35 @@ async function startServer() {
         });
       }
 
-      const markdownFile = req.files.markdownFile as fileUpload.UploadedFile;
+      // Support both old (markdownFile) and new naming (groupMarkdown, individualMarkdown)
+      const markdownFile =
+        (req.files.markdownFile as fileUpload.UploadedFile) ||
+        (req.files.groupMarkdown as fileUpload.UploadedFile);
+
+      const individualMarkdownFile = req.files.individualMarkdown as fileUpload.UploadedFile | undefined;
 
       console.log(`Importing sociogram for course ${courseId}, year ${year}`);
-      console.log(`Markdown file received: ${markdownFile.name}`);
+      if (markdownFile) console.log(`Group markdown file: ${markdownFile.name}`);
+      if (individualMarkdownFile) console.log(`Individual markdown file: ${individualMarkdownFile.name}`);
 
-      // Convert buffer to string
-      const markdownContent = markdownFile.data.toString('utf-8');
+      // Convert buffers to strings
+      const groupContent = markdownFile ? markdownFile.data.toString('utf-8') : null;
+      const individualContent = individualMarkdownFile ? individualMarkdownFile.data.toString('utf-8') : null;
 
-      // Parse markdown using DeepSeek to extract table data
-      const parseResult = await parseMarkdownSociogram(markdownContent);
+      // Parse both files if available, use individual report if available (better structure)
+      let parseResult;
+      if (individualContent) {
+        console.log('✓ Using individual report (preferred)');
+        parseResult = await parseMarkdownSociogram(individualContent, true);
+      } else if (groupContent) {
+        console.log('✓ Using group report');
+        parseResult = await parseMarkdownSociogram(groupContent, false);
+      } else {
+        return res.status(400).json({
+          error: "No valid markdown content found",
+          status: "validation_failed",
+        });
+      }
       const { studentData, relations: rawRelations } = parseResult;
 
       console.log(`Parsed ${studentData.length} students from group PDF via DeepSeek`);

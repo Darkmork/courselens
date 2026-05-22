@@ -431,7 +431,7 @@ export async function parseIndividualPDF(
 
 /**
  * Phase A: Extract student table data using deepseek-chat (text model)
- * @param fullText Extracted text from PDF
+ * @param fullText Extracted text from PDF/Markdown
  * @param apiKey DeepSeek API key
  * @returns Promise with parsed estudiantes array
  */
@@ -439,55 +439,82 @@ async function extractStudentTableWithDeepSeek(
   fullText: string,
   apiKey: string
 ): Promise<{ estudiantes: Array<any> }> {
-  const prompt = `You are a PULSO.cl sociogram data parser. Extract student data from the data table.
+  const prompt = `Eres un experto analizando reportes PULSO.cl de sociogramas. El documento puede tener formato desordenado o estar en Markdown.
 
-Extract ALL student information:
-- Student names
-- Autoreporte scores (5 dimensions, 1-5 scale each)
-- Menciones counts (positive and negative categories)
-- Student role (Líder Positivo, Desafío, No responde, Saludable)
+EXTRAE todos los datos de estudiantes:
+- Nombres de estudiantes
+- Scores autoreporte (5 dimensiones, escala 1-5)
+- Conteos de menciones (categorías positivas y negativas)
+- Rol del estudiante (Líder Positivo, Desafío, No responde, Saludable, Amistoso(a), o si tiene descripción especial)
 
-Return ONLY valid JSON (no markdown, no code blocks):
+CATEGORÍAS MENCIONES POSITIVAS (busca en la tabla):
+- relaciones_compartir: número
+- relaciones_trabajar: número
+- ayuda_demas: número
+- valor_respeto: número
+- valor_vocacion: número
+- valor_sencillez: número
+- valor_espiritu_comunitario: número
+- valor_responsabilidad: número
+- valor_verdad: número
+- liderazgo: número
+- trata_bien_incluye: número
+- resuelve_conflictos: número
+
+CATEGORÍAS MENCIONES NEGATIVAS:
+- relaciones_negativas_compartir: número
+- siente_solo: número
+- pasandolo_mal: número
+- relaciones_negativas_trabajar: número
+- molesta_otros: número
+- excluye_trata_mal: número
+- pasandolo_mal_redes: número
+
+RETORNA SOLO JSON válido (sin markdown, sin bloques de código):
 {
   "estudiantes": [
     {
-      "nombre": "string",
+      "nombre": "string (nombre completo del estudiante)",
       "autoreporte": {
-        "bienestar_general": 1-5,
-        "aprendizaje": 1-5,
-        "relaciones_interpersonales": 1-5,
-        "autogestion_academica": 1-5,
-        "inclusion": 1-5
+        "bienestar_general": número 1-5,
+        "aprendizaje": número 1-5,
+        "relaciones_interpersonales": número 1-5,
+        "autogestion_academica": número 1-5,
+        "inclusion": número 1-5
       },
       "menciones_positivas": {
-        "relaciones_compartir": number,
-        "relaciones_trabajar": number,
-        "ayuda_demas": number,
-        "valor_respeto": number,
-        "valor_vocacion": number,
-        "valor_sencillez": number,
-        "valor_espiritu_comunitario": number,
-        "valor_responsabilidad": number,
-        "valor_verdad": number,
-        "liderazgo": number,
-        "trata_bien_incluye": number,
-        "resuelve_conflictos": number,
-        "total": number
+        "relaciones_compartir": número,
+        "relaciones_trabajar": número,
+        "ayuda_demas": número,
+        "valor_respeto": número,
+        "valor_vocacion": número,
+        "valor_sencillez": número,
+        "valor_espiritu_comunitario": número,
+        "valor_responsabilidad": número,
+        "valor_verdad": número,
+        "liderazgo": número,
+        "trata_bien_incluye": número,
+        "resuelve_conflictos": número,
+        "total": número (suma de arriba)
       },
       "menciones_negativas": {
-        "relaciones_negativas_compartir": number,
-        "siente_solo": number,
-        "pasandolo_mal": number,
-        "relaciones_negativas_trabajar": number,
-        "molesta_otros": number,
-        "total": number
+        "relaciones_negativas_compartir": número,
+        "siente_solo": número,
+        "pasandolo_mal": número,
+        "relaciones_negativas_trabajar": número,
+        "molesta_otros": número,
+        "excluye_trata_mal": número,
+        "pasandolo_mal_redes": número,
+        "total": número (suma de arriba)
       },
-      "rol": "Líder Positivo" | "Saludable" | "Desafío" | "No responde"
+      "rol": "Líder Positivo" | "Saludable" | "Desafío" | "No responde" | "Amistoso(a)" | "Dificultad para trabajar en grupo"
     }
   ]
 }
 
-Table data from PDF:
+Si la tabla está desordenada o mal formateada, INTERPRETA los números disponibles. Prioriza exactitud sobre estructura perfecta.
+
+Datos del documento:
 ${fullText}`;
 
   try {
@@ -531,13 +558,134 @@ ${fullText}`;
 
 
 /**
+ * Parse individual PULSO.cl reports from Markdown
+ * Individual reports have per-student data with better structure
+ * @param markdownContent String content of the individual markdown file
+ * @param apiKey DeepSeek API key
+ * @returns Promise with parsed estudiantes array
+ */
+async function extractIndividualReportWithDeepSeek(
+  markdownContent: string,
+  apiKey: string
+): Promise<{ estudiantes: Array<any> }> {
+  // Split by student section (pattern: "Reporte sociograma 2025 - III° C TABOR\n<Nombre>")
+  const sections = markdownContent.split(/Reporte\s+sociograma\s+\d+\s*-[^\n]+\n+/);
+
+  // Filter out empty sections and process each student section
+  const studentSections = sections.filter(s => s.trim().length > 50);
+
+  console.log(`✓ Found ${studentSections.length} student sections in individual report`);
+
+  // Send all sections to DeepSeek for extraction
+  const prompt = `Eres un experto analizando reportes individuales PULSO.cl de sociogramas.
+
+Para CADA sección (cada estudiante), extrae:
+- Nombre completo del estudiante (aparece al inicio)
+- Rol/Perfil (ej: "Amistoso(a)", "Dificultad para trabajar en grupo", o "No responde")
+- Autoreporte: 5 scores numéricos (1-5) en orden: bienestar_general, aprendizaje, relaciones_interpersonales, autogestion_academica, inclusion
+- Menciones Positivas: todos los números de cada categoría
+- Menciones Negativas: todos los números de cada categoría
+
+CATEGORÍAS MENCIONES POSITIVAS:
+relaciones_compartir, relaciones_trabajar, ayuda_demas, valor_respeto, valor_vocacion, valor_sencillez, valor_espiritu_comunitario, valor_responsabilidad, valor_verdad, liderazgo, trata_bien_incluye, resuelve_conflictos
+
+CATEGORÍAS MENCIONES NEGATIVAS:
+relaciones_negativas_compartir, siente_solo, pasandolo_mal, relaciones_negativas_trabajar, molesta_otros, excluye_trata_mal, pasandolo_mal_redes
+
+RETORNA JSON válido (sin markdown):
+{
+  "estudiantes": [
+    {
+      "nombre": "string",
+      "autoreporte": {
+        "bienestar_general": 1-5,
+        "aprendizaje": 1-5,
+        "relaciones_interpersonales": 1-5,
+        "autogestion_academica": 1-5,
+        "inclusion": 1-5
+      },
+      "menciones_positivas": {
+        "relaciones_compartir": número,
+        "relaciones_trabajar": número,
+        "ayuda_demas": número,
+        "valor_respeto": número,
+        "valor_vocacion": número,
+        "valor_sencillez": número,
+        "valor_espiritu_comunitario": número,
+        "valor_responsabilidad": número,
+        "valor_verdad": número,
+        "liderazgo": número,
+        "trata_bien_incluye": número,
+        "resuelve_conflictos": número,
+        "total": número
+      },
+      "menciones_negativas": {
+        "relaciones_negativas_compartir": número,
+        "siente_solo": número,
+        "pasandolo_mal": número,
+        "relaciones_negativas_trabajar": número,
+        "molesta_otros": número,
+        "excluye_trata_mal": número,
+        "pasandolo_mal_redes": número,
+        "total": número
+      },
+      "rol": "string"
+    }
+  ]
+}
+
+REPORTES INDIVIDUALES A PROCESAR:
+${studentSections.join('\n\n---\n\n')}`;
+
+  try {
+    const requestBody = {
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0,
+      max_tokens: 40000,
+    };
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`DeepSeek API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+
+    let jsonStr = content.trim();
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*/, '');
+      jsonStr = jsonStr.replace(/```\s*$/, '');
+      jsonStr = jsonStr.trim();
+    }
+
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error('DeepSeek individual parsing failed:', error);
+    throw error;
+  }
+}
+
+/**
  * Parse PULSO.cl sociogram from Markdown file using DeepSeek Chat
- * Markdown file should be generated by MarkItDown from a PDF export
+ * Supports both group and individual reports
  * @param markdownContent String content of the markdown file
+ * @param isIndividualReport Optional flag to indicate if this is an individual report
  * @returns Promise with students array and relations array
  */
 export async function parseMarkdownSociogram(
-  markdownContent: string
+  markdownContent: string,
+  isIndividualReport: boolean = false
 ): Promise<{
   students: string[];
   relations: Array<{ from: string; to: string; tipo: string; count: number }>;
@@ -556,13 +704,19 @@ export async function parseMarkdownSociogram(
   }
 
   try {
-    // Extract student table data from markdown using deepseek-chat
-    console.log('✓ Parsing markdown sociogram data with deepseek-chat...');
-    const tableResult = await extractStudentTableWithDeepSeek(markdownContent, deepseekApiKey);
+    let tableResult;
+
+    if (isIndividualReport) {
+      console.log('✓ Parsing individual markdown report with deepseek-chat...');
+      tableResult = await extractIndividualReportWithDeepSeek(markdownContent, deepseekApiKey);
+    } else {
+      console.log('✓ Parsing group markdown report with deepseek-chat...');
+      tableResult = await extractStudentTableWithDeepSeek(markdownContent, deepseekApiKey);
+    }
 
     // Relations are inferred from mention counts in the table data
     const relations: Array<{ from: string; to: string; tipo: string; fuerza: number }> = [];
-    console.log('ℹ Sociogram data extracted from markdown (table only)');
+    console.log('ℹ Sociogram data extracted from markdown');
     console.log(`  - ${tableResult.estudiantes.length} students with profiles`);
     console.log(`  - Mention counts: positive/negative per student`);
     console.log(`  - Node sizing: based on mention counts`);

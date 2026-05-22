@@ -23,16 +23,18 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   courseId = 'course-1',
   onBack
 }) => {
-  const [markdownFile, setMarkdownFile] = useState<File | null>(null);
+  const [groupMarkdown, setGroupMarkdown] = useState<File | null>(null);
+  const [individualMarkdown, setIndividualMarkdown] = useState<File | null>(null);
   const [year, setYear] = useState<string>('2025');
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState<string>('');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
 
-  // File input ref for resetting
-  const markdownInputRef = useRef<HTMLInputElement>(null);
+  // File input refs for resetting
+  const groupInputRef = useRef<HTMLInputElement>(null);
+  const individualInputRef = useRef<HTMLInputElement>(null);
 
-  const handleMarkdownChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGroupMarkdownChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -48,27 +50,53 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
       return;
     }
 
-    setMarkdownFile(file);
+    setGroupMarkdown(file);
     setImportStatus('idle');
-    setImportMessage('✓ Archivo Markdown cargado y listo para importar');
+    setImportMessage('✓ Reporte grupal cargado');
+  };
+
+  const handleIndividualMarkdownChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.includes('text') && !file.name.endsWith('.md')) {
+      setImportStatus('error');
+      setImportMessage('Por favor selecciona un archivo Markdown (.md) válido');
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setImportStatus('error');
+      setImportMessage('El archivo es demasiado grande (máximo 10MB)');
+      return;
+    }
+
+    setIndividualMarkdown(file);
+    setImportStatus('idle');
+    setImportMessage('✓ Reporte individual cargado');
   };
 
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!markdownFile || !year || !courseId) {
+    if ((!groupMarkdown && !individualMarkdown) || !year || !courseId) {
       setImportStatus('error');
-      setImportMessage('Todos los campos son requeridos');
+      setImportMessage('Se requiere al menos un archivo Markdown (grupal o individual)');
       return;
     }
 
     setImportStatus('loading');
-    setImportMessage('Analizando archivo Markdown con DeepSeek...');
+    setImportMessage('Analizando archivos Markdown con DeepSeek...');
 
     try {
       const formData = new FormData();
-      formData.append('markdownFile', markdownFile);
+      if (groupMarkdown) {
+        formData.append('groupMarkdown', groupMarkdown);
+      }
+      if (individualMarkdown) {
+        formData.append('individualMarkdown', individualMarkdown);
+      }
       formData.append('year', year);
       formData.append('courseId', courseId);
 
@@ -100,7 +128,8 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         }
 
         // Reset form
-        setMarkdownFile(null);
+        setGroupMarkdown(null);
+        setIndividualMarkdown(null);
       }
     } catch (error) {
       setImportStatus('error');
@@ -110,13 +139,15 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   };
 
   const handleReset = () => {
-    setMarkdownFile(null);
+    setGroupMarkdown(null);
+    setIndividualMarkdown(null);
     setImportStatus('idle');
     setImportMessage('');
     setImportSummary(null);
 
-    // Clear file input
-    if (markdownInputRef.current) markdownInputRef.current.value = '';
+    // Clear file inputs
+    if (groupInputRef.current) groupInputRef.current.value = '';
+    if (individualInputRef.current) individualInputRef.current.value = '';
   };
 
   return (
@@ -136,7 +167,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           )}
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Importar Sociograma</h1>
-            <p className="text-gray-400">Sube el archivo Markdown generado por MarkItDown para importar datos de sociograma</p>
+            <p className="text-gray-400">Sube archivos Markdown (grupal o individual) generados por MarkItDown</p>
           </div>
         </div>
 
@@ -157,28 +188,56 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
             </select>
           </div>
 
-          {/* Markdown File Upload */}
+          {/* Group Markdown File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-200 mb-2">
-              Reporte Sociograma (Markdown)
+              Reporte Grupal (Markdown) - Opcional
             </label>
             <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
-                ref={markdownInputRef}
+                ref={groupInputRef}
                 type="file"
                 accept=".md,text/markdown,text/plain"
-                onChange={handleMarkdownChange}
+                onChange={handleGroupMarkdownChange}
                 className="hidden"
-                id="markdownFile"
+                id="groupMarkdown"
                 disabled={importStatus === 'loading'}
               />
-              <label htmlFor="markdownFile" className="cursor-pointer block">
+              <label htmlFor="groupMarkdown" className="cursor-pointer block">
                 <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
                 <p className="text-sm text-gray-300">
-                  {markdownFile ? (
-                    <span className="text-green-400 font-medium">{markdownFile.name}</span>
+                  {groupMarkdown ? (
+                    <span className="text-green-400 font-medium">{groupMarkdown.name}</span>
                   ) : (
-                    'Haz clic para seleccionar el archivo Markdown'
+                    'Haz clic para seleccionar el reporte grupal'
+                  )}
+                </p>
+              </label>
+            </div>
+          </div>
+
+          {/* Individual Markdown File Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Reporte Individual (Markdown) - Recomendado
+            </label>
+            <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
+              <input
+                ref={individualInputRef}
+                type="file"
+                accept=".md,text/markdown,text/plain"
+                onChange={handleIndividualMarkdownChange}
+                className="hidden"
+                id="individualMarkdown"
+                disabled={importStatus === 'loading'}
+              />
+              <label htmlFor="individualMarkdown" className="cursor-pointer block">
+                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                <p className="text-sm text-gray-300">
+                  {individualMarkdown ? (
+                    <span className="text-green-400 font-medium">{individualMarkdown.name}</span>
+                  ) : (
+                    'Haz clic para seleccionar el reporte individual (mejor estructura)'
                   )}
                 </p>
               </label>
@@ -218,7 +277,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={importStatus === 'loading' || !markdownFile}
+              disabled={importStatus === 'loading' || (!groupMarkdown && !individualMarkdown)}
               aria-label="Importar sociograma"
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             >
@@ -244,11 +303,12 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
 
         {/* Help Text */}
         <div className="mt-8 bg-blue-900/20 border border-blue-700 rounded-lg p-4 text-sm text-blue-200">
-          <p className="font-medium mb-2">Archivo esperado:</p>
-          <ul className="list-disc list-inside space-y-1 text-blue-300/90">
-            <li><strong>Reporte Sociograma (Markdown):</strong> Archivo .md generado por MarkItDown a partir del PDF de PULSO.cl. Contiene la tabla resumen con todos los estudiantes, roles, autoreporte, menciones (positivas y negativas).</li>
+          <p className="font-medium mb-2">Archivos esperados:</p>
+          <ul className="list-disc list-inside space-y-2 text-blue-300/90">
+            <li><strong>Reporte Grupal (Markdown):</strong> Archivo .md generado por MarkItDown. Contiene tabla resumen con estudiantes, roles, autoreporte y menciones. <em>Estructura más desorganizada</em></li>
+            <li><strong>Reporte Individual (Markdown) - RECOMENDADO:</strong> Archivo .md con datos por estudiante (preferido). Contiene autoreporte detallado y menciones más limpias por estudiante. <em>Mejor precisión en extracción</em></li>
           </ul>
-          <p className="mt-3 text-blue-300/80 text-xs">✨ El sistema usa DeepSeek AI para extraer y analizar los datos de la tabla automáticamente. Los datos se guardarán en la base de datos de la clase seleccionada.</p>
+          <p className="mt-3 text-blue-300/80 text-xs">✨ El sistema usa DeepSeek AI para extraer automáticamente: autoreporte (5 dimensiones), menciones positivas (12 categorías) y negativas (7 categorías). Si cargas ambos, usa el individual (mejor estructura).</p>
         </div>
       </div>
     </div>
