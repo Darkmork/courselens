@@ -430,79 +430,22 @@ export async function parseIndividualPDF(
 }
 
 /**
- * Parse PULSO.cl group PDF using DeepSeek Vision/Chat to extract table data
- * Converts PDF text to structured student data via AI interpretation
- * @param pdfBuffer Buffer containing the PDF file data
- * @returns Promise with students array and relations array
+ * Phase A: Extract student table data using deepseek-chat (text model)
+ * @param fullText Extracted text from PDF
+ * @param apiKey DeepSeek API key
+ * @returns Promise with parsed estudiantes array
  */
-export async function parseGroupPDFWithDeepSeek(
-  pdfBuffer: Buffer,
-  options?: { graphPage2?: string; graphPage3?: string }
-): Promise<{
-  students: string[];
-  relations: Array<{ from: string; to: string; tipo: string; count: number }>;
-  studentData: Array<{
-    nombre: string;
-    autoreporte: { bienestar_general: number; aprendizaje: number; relaciones_interpersonales: number; autogestion_academica: number; inclusion: number };
-    menciones_positivas: Record<string, number>;
-    menciones_negativas: Record<string, number>;
-    rol: string;
-  }>;
-}> {
-  const pdfjs = await getPdfjs();
-  const uint8Array = new Uint8Array(pdfBuffer);
+async function extractStudentTableWithDeepSeek(
+  fullText: string,
+  apiKey: string
+): Promise<{ estudiantes: Array<any> }> {
+  const prompt = `You are a PULSO.cl sociogram data parser. Extract student data from the data table.
 
-  const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
-  const lines_final: string[] = [];
-
-  // Extract text from all pages
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageLines = extractLinesFromPDF(textContent);
-    lines_final.push(...pageLines);
-  }
-
-  const fullText = lines_final.join('\n');
-
-  // Call DeepSeek to interpret the table
-  const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-  if (!deepseekApiKey) {
-    throw new Error('DEEPSEEK_API_KEY environment variable is not set');
-  }
-
-  // Build message content with text and optional graph images
-  const prompt = `You are a PULSO.cl sociogram data parser. Extract ALL student data and relationships from this PULSO.cl report.
-
-CRITICAL INSTRUCTIONS:
-
-TASK 1: Extract student data from the data table
+Extract ALL student information:
 - Student names
 - Autoreporte scores (5 dimensions, 1-5 scale each)
 - Menciones counts (positive and negative categories)
 - Student role (Líder Positivo, Desafío, No responde, Saludable)
-
-TASK 2: Extract relationships - THIS IS THE MOST IMPORTANT
-${options?.graphPage2 || options?.graphPage3 ? `
-The images below are sociogram graphs showing RELATIONSHIP CONNECTIONS between students:
-- Image 1 (if provided): Positive work relationships (trabajo_positivo) - shown as lines/arrows connecting student names
-- Image 2 (if provided): Positive social relationships (convivencia_positiva) - shown as lines/arrows connecting student names
-
-CRITICAL: Analyze each graph image VERY CAREFULLY:
-1. Identify all student names/nodes in the graph
-2. Look for EVERY line, arrow, or connection between any two students
-3. For each connection you see between Student A and Student B, extract it as:
-   - from: "Student A name" (exactly as shown in the graph)
-   - to: "Student B name" (exactly as shown in the graph)
-   - tipo: "trabajo_positivo" if from Image 1, or "convivencia_positiva" if from Image 2
-   - fuerza: 1-3 based on line thickness/prominence (thicker = stronger)
-
-IMPORTANT: These are visual connections shown as lines in the graphs. Extract EVERY visible line/arrow connection.
-Even if there is only 1 connection, include it. Do not skip connections or assume none exist.
-` : `
-The PDF contains relationship graphs in later pages showing connections between students.
-Try to extract any relationships visible from the text table.
-`}
 
 Return ONLY valid JSON (no markdown, no code blocks):
 {
@@ -541,67 +484,28 @@ Return ONLY valid JSON (no markdown, no code blocks):
       },
       "rol": "Líder Positivo" | "Saludable" | "Desafío" | "No responde"
     }
-  ],
-  "relaciones": [
-    {
-      "from": "student_name",
-      "to": "student_name",
-      "tipo": "trabajo_positivo" | "convivencia_positiva",
-      "fuerza": 1-3
-    }
   ]
 }
 
 Table data from PDF:
 ${fullText}`;
 
-  // Build complete message text including images as base64 (DeepSeek v4 requires images in text, not image_url)
-  let messageText = prompt;
-
-  if (options?.graphPage2) {
-    messageText += `\n\n[IMAGEN 1 - Relaciones positivas de trabajo (base64)]:\ndata:image/jpeg;base64,${options.graphPage2}`;
-    console.log('✓ Added graph page 2 (trabajo positivo) to message');
-  }
-
-  if (options?.graphPage3) {
-    messageText += `\n\n[IMAGEN 2 - Relaciones positivas de convivencia (base64)]:\ndata:image/jpeg;base64,${options.graphPage3}`;
-    console.log('✓ Added graph page 3 (convivencia positiva) to message');
-  }
-
-  const messageContent = [{ type: 'text', text: messageText }];
-
   try {
-    // Create abort controller with 120 second timeout for DeepSeek request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
-
     const requestBody = {
-      model: 'deepseek-chat', // Use chat model which properly handles image analysis
-      messages: [
-        {
-          role: 'user',
-          content: messageContent[0].text, // Send as plain text (DeepSeek processes base64 images in text)
-        },
-      ],
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
       temperature: 0,
       max_tokens: 30000,
     };
 
-    console.log(`Sending to DeepSeek: ${messageContent.length} content items (${(JSON.stringify(requestBody).length / 1024 / 1024).toFixed(2)} MB)`);
-    if (options?.graphPage2) console.log('- Graph page 2: included');
-    if (options?.graphPage3) console.log('- Graph page 3: included');
-
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${deepseekApiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
-      signal: controller.signal,
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.text();
@@ -611,46 +515,203 @@ ${fullText}`;
     const data = await response.json();
     const content = data.choices[0].message.content;
 
-    // Log token usage
-    if (data.usage) {
-      console.log(`DeepSeek Token Usage:`, {
-        prompt_tokens: data.usage.prompt_tokens,
-        completion_tokens: data.usage.completion_tokens,
-        total_tokens: data.usage.total_tokens,
-        cache_creation_input_tokens: data.usage.cache_creation_input_tokens || 0,
-        cache_read_input_tokens: data.usage.cache_read_input_tokens || 0,
-      });
-    }
-
-    // Parse JSON from response (handle markdown code blocks)
     let jsonStr = content.trim();
-
-    // Remove markdown code blocks if present (```json ... ``` or ``` ... ```)
     if (jsonStr.startsWith('```')) {
-      // Remove opening ``` (with optional 'json' language specifier)
       jsonStr = jsonStr.replace(/^```(?:json)?\s*/, '');
-      // Remove closing ```
       jsonStr = jsonStr.replace(/```\s*$/, '');
       jsonStr = jsonStr.trim();
     }
 
-    let parsed;
-    try {
-      parsed = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error('Failed to parse DeepSeek response:', {
-        rawContent: content.substring(0, 200),
-        cleanedContent: jsonStr.substring(0, 200),
-        error: parseError instanceof Error ? parseError.message : String(parseError),
-      });
-      throw new Error(`Invalid JSON from DeepSeek: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error('DeepSeek table parsing failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Phase B: Extract relationships from sociogram graphs using deepseek-vl2 (vision model)
+ * @param options Graph images in base64 (graphPage2, graphPage3)
+ * @param studentNames List of student names for reference
+ * @param apiKey DeepSeek API key
+ * @returns Promise with relaciones array
+ */
+async function extractRelationsWithVL2(
+  options: { graphPage2?: string; graphPage3?: string },
+  studentNames: string[],
+  apiKey: string
+): Promise<Array<{ from: string; to: string; tipo: string; fuerza: number }>> {
+  const PROMPT_VL2 = `Eres un experto analizando sociogramas de PULSO.cl.
+
+ESTRUCTURA DEL GRÁFICO:
+- Cada círculo = un estudiante. El nombre está escrito DEBAJO del círculo en 2-3 líneas.
+- Líneas SÓLIDAS verdes = relaciones de tipo "trabajo_positivo"
+- Líneas PUNTEADAS/discontinuas verdes = relaciones de tipo "convivencia_positiva"
+- Las flechas/líneas son DIRIGIDAS: el origen es quien nominó, el destino es quien fue nominado.
+
+LISTA DE ESTUDIANTES (usa estos nombres exactos):
+${studentNames.join(', ')}
+
+TAREA: Para CADA línea visible en el gráfico:
+1. Identifica el nodo ORIGEN (de donde sale la línea) — usa el nombre de la lista
+2. Identifica el nodo DESTINO (hacia donde va la línea) — usa el nombre de la lista
+3. Determina el tipo: "trabajo_positivo" (línea sólida) o "convivencia_positiva" (línea punteada)
+4. Estima la fuerza: 1 (delgada) / 2 (media) / 3 (gruesa). Si no puedes, usa 1.
+
+IMPORTANTE: NO inventes relaciones. Solo las que puedas ver visualmente.
+
+Retorna SOLO JSON válido (sin markdown):
+{
+  "relaciones": [
+    { "from": "Nombre Apellido", "to": "Nombre Apellido", "tipo": "trabajo_positivo", "fuerza": 1 }
+  ]
+}`;
+
+  const content: Array<any> = [];
+
+  // Add image 1 (página 2 - trabajo_positivo)
+  if (options.graphPage2) {
+    content.push({
+      type: 'image_url',
+      image_url: { url: `data:image/jpeg;base64,${options.graphPage2}` }
+    });
+    content.push({
+      type: 'text',
+      text: 'IMAGEN 1: Grafo de relaciones positivas (página 2 del PDF)'
+    });
+  }
+
+  // Add image 2 (página 3 - convivencia_positiva)
+  if (options.graphPage3) {
+    content.push({
+      type: 'image_url',
+      image_url: { url: `data:image/jpeg;base64,${options.graphPage3}` }
+    });
+    content.push({
+      type: 'text',
+      text: 'IMAGEN 2: Grafo de relaciones positivas (página 3 del PDF)'
+    });
+  }
+
+  // Add instruction prompt at the end
+  content.push({
+    type: 'text',
+    text: PROMPT_VL2
+  });
+
+  try {
+    const requestBody = {
+      model: 'deepseek-vl2',
+      messages: [{ role: 'user', content }],
+      temperature: 0,
+      max_tokens: 20000,
+    };
+
+    console.log('✓ Sending graph analysis to DeepSeek VL2...');
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`DeepSeek VL2 API error: ${response.status} - ${error}`);
     }
 
-    const students = parsed.estudiantes.map((e: any) => e.nombre);
-    const relations = parsed.relaciones || [];
+    const data = await response.json();
+    const responseContent = data.choices[0].message.content;
 
-    console.debug(`Parsed ${students.length} students from group PDF via DeepSeek`);
-    console.debug(`Parsed ${relations.length} relations from group PDF via DeepSeek`);
+    // Log token usage
+    if (data.usage) {
+      console.log(`✓ DeepSeek VL2 Token Usage:`, {
+        prompt_tokens: data.usage.prompt_tokens,
+        completion_tokens: data.usage.completion_tokens,
+        total_tokens: data.usage.total_tokens,
+      });
+    }
+
+    // Parse JSON from response
+    let jsonStr = responseContent.trim();
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*/, '');
+      jsonStr = jsonStr.replace(/```\s*$/, '');
+      jsonStr = jsonStr.trim();
+    }
+
+    const parsed = JSON.parse(jsonStr);
+    return parsed.relaciones || [];
+  } catch (error) {
+    console.error('DeepSeek VL2 graph extraction failed:', error);
+    // Return empty array on failure (don't throw - allow import to continue)
+    return [];
+  }
+}
+
+/**
+ * Parse PULSO.cl group PDF using DeepSeek Vision/Chat to extract table data
+ * Converts PDF text to structured student data via AI interpretation
+ * @param pdfBuffer Buffer containing the PDF file data
+ * @returns Promise with students array and relations array
+ */
+export async function parseGroupPDFWithDeepSeek(
+  pdfBuffer: Buffer,
+  options?: { graphPage2?: string; graphPage3?: string }
+): Promise<{
+  students: string[];
+  relations: Array<{ from: string; to: string; tipo: string; count: number }>;
+  studentData: Array<{
+    nombre: string;
+    autoreporte: { bienestar_general: number; aprendizaje: number; relaciones_interpersonales: number; autogestion_academica: number; inclusion: number };
+    menciones_positivas: Record<string, number>;
+    menciones_negativas: Record<string, number>;
+    rol: string;
+  }>;
+}> {
+  const pdfjs = await getPdfjs();
+  const uint8Array = new Uint8Array(pdfBuffer);
+
+  const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
+  const lines_final: string[] = [];
+
+  // Extract text from all pages
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageLines = extractLinesFromPDF(textContent);
+    lines_final.push(...pageLines);
+  }
+
+  const fullText = lines_final.join('\n');
+
+  // Get DeepSeek API key
+  const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+  if (!deepseekApiKey) {
+    throw new Error('DEEPSEEK_API_KEY environment variable is not set');
+  }
+
+  try {
+    // Phase A: Extract student table data using deepseek-chat
+    console.log('✓ Phase A: Extracting student table data with deepseek-chat...');
+    const tableResult = await extractStudentTableWithDeepSeek(fullText, deepseekApiKey);
+
+    // Phase B: Extract relationships from graphs using deepseek-vl2 (only if images provided)
+    let relations: Array<{ from: string; to: string; tipo: string; fuerza: number }> = [];
+    if (options?.graphPage2 || options?.graphPage3) {
+      console.log('✓ Phase B: Extracting graph relationships with deepseek-vl2...');
+      const studentNames = tableResult.estudiantes.map((e: any) => e.nombre);
+      relations = await extractRelationsWithVL2(options, studentNames, deepseekApiKey);
+      console.log(`✓ Extracted ${relations.length} relations from graphs`);
+    } else {
+      console.log('⚠ Phase B: No graph images provided, skipping visual relationship extraction');
+    }
+
+    // Combine results
+    const students = tableResult.estudiantes.map((e: any) => e.nombre);
+    console.log(`✓ Total: ${students.length} students, ${relations.length} relations`);
 
     return {
       students,
@@ -660,10 +721,10 @@ ${fullText}`;
         tipo: r.tipo,
         count: r.fuerza || 1,
       })),
-      studentData: parsed.estudiantes,
+      studentData: tableResult.estudiantes,
     };
   } catch (error) {
-    console.error('DeepSeek parsing failed:', error);
+    console.error('PDF parsing failed:', error);
     throw error;
   }
 }

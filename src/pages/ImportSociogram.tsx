@@ -40,7 +40,7 @@ async function renderPdfPageToImage(file: File, pageNum: number): Promise<string
   }
 
   const page = await pdf.getPage(pageNum);
-  const viewport = page.getViewport({ scale: 1.5 });
+  const viewport = page.getViewport({ scale: 3.0 });
 
   const canvas = document.createElement('canvas');
   canvas.width = viewport.width;
@@ -49,7 +49,7 @@ async function renderPdfPageToImage(file: File, pageNum: number): Promise<string
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Could not get canvas context');
 
-  await page.render({ canvasContext: context, viewport }).promise;
+  await page.render({ canvasContext: context, viewport, canvas }).promise;
 
   // Convert to base64 JPEG with low quality to reduce size
   return new Promise((resolve) => {
@@ -62,7 +62,7 @@ async function renderPdfPageToImage(file: File, pageNum: number): Promise<string
         resolve(base64);
       };
       reader.readAsDataURL(blob);
-    }, 'image/jpeg', 0.5); // Low quality: 0.5 instead of 0.85
+    }, 'image/jpeg', 0.75); // Higher quality: 0.75 for better OCR readability
   });
 }
 
