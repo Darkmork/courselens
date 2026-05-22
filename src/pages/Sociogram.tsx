@@ -13,6 +13,7 @@ interface SociogramProps {
 const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [sociogramData, setSociogramData] = useState<SociogramData | null>(null);
+  const [courseVision, setCourseVision] = useState<any>(null);
   const [isLoadingSociogram, setIsLoadingSociogram] = useState(true);
   const [hasNoData, setHasNoData] = useState(false);
   const [sortBy, setSortBy] = useState<'nombre' | 'bienestar' | 'menciones_positivas' | 'menciones_negativas'>('nombre');
@@ -53,7 +54,27 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       }
     );
 
-    return () => unsubscribe();
+    // Also load course vision analysis
+    const analysisRef = doc(db, `sociogram_analysis_${selectedYear}`, courseId);
+    const unsubscribeAnalysis = onSnapshot(
+      analysisRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setCourseVision(docSnap.data());
+        } else {
+          setCourseVision(null);
+        }
+      },
+      (error) => {
+        console.error('Error loading course vision:', error);
+        setCourseVision(null);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+      unsubscribeAnalysis();
+    };
   }, [selectedYear, courseId]);
 
   const getSortedStudents = () => {
@@ -184,6 +205,131 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                 <p className="text-3xl font-bold text-amber-400 mt-2">{sociogramData.metricas.fragmentacion.toFixed(1)}%</p>
               </div>
             </div>
+
+            {/* Resumen de Estudiantes Card */}
+            {(() => {
+              const roleCount = {
+                'líder positivo': 0,
+                'saludable': 0,
+                'amistoso(a)': 0,
+                'desafío': 0,
+                'no responde': 0
+              };
+              let totalBienestar = 0;
+              let bienestarCount = 0;
+              let atRiskCount = 0;
+
+              sociogramData.estudiantes.forEach(student => {
+                const rol = (student.rol || 'no responde').toLowerCase();
+                if (rol in roleCount) {
+                  roleCount[rol as keyof typeof roleCount]++;
+                }
+                const bienestar = student.autoreporte?.bienestar_general || 0;
+                const mencNegativas = student.menciones_negativas?.total || 0;
+                if (bienestar > 0) {
+                  totalBienestar += bienestar;
+                  bienestarCount++;
+                }
+                if (mencNegativas >= 3 || bienestar <= 2) {
+                  atRiskCount++;
+                }
+              });
+
+              const avgBienestar = bienestarCount > 0 ? (totalBienestar / bienestarCount).toFixed(1) : '0';
+
+              return (
+                <div className="bg-gradient-to-br from-blue-900/20 to-blue-900/10 border border-blue-700/50 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-white mb-4">📊 Resumen de Estudiantes</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                    <div className="bg-gray-800/40 rounded p-3">
+                      <p className="text-gray-400 text-xs">Líderes Positivos</p>
+                      <p className="text-2xl font-bold text-green-400 mt-1">{roleCount['líder positivo']}</p>
+                    </div>
+                    <div className="bg-gray-800/40 rounded p-3">
+                      <p className="text-gray-400 text-xs">Saludables</p>
+                      <p className="text-2xl font-bold text-purple-400 mt-1">{roleCount['saludable'] + roleCount['amistoso(a)']}</p>
+                    </div>
+                    <div className="bg-gray-800/40 rounded p-3">
+                      <p className="text-gray-400 text-xs">Desafíos</p>
+                      <p className="text-2xl font-bold text-red-400 mt-1">{roleCount['desafío']}</p>
+                    </div>
+                    <div className="bg-gray-800/40 rounded p-3">
+                      <p className="text-gray-400 text-xs">Promedio Bienestar</p>
+                      <p className="text-2xl font-bold text-yellow-400 mt-1">{avgBienestar}/5</p>
+                    </div>
+                    <div className="bg-gray-800/40 rounded p-3">
+                      <p className="text-gray-400 text-xs">Estudiantes en Riesgo</p>
+                      <p className="text-2xl font-bold text-orange-400 mt-1">🔴 {atRiskCount}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Salud del Curso Card */}
+            {courseVision && (
+              <div className="bg-gradient-to-br from-purple-900/20 to-purple-900/10 border border-purple-700/50 rounded-lg p-6 space-y-4">
+                <h3 className="text-lg font-bold text-white">💜 Salud del Curso</h3>
+
+                {/* Course Vision Narrative */}
+                <div>
+                  <p className="text-sm text-gray-400 font-semibold mb-2">Visión del Curso</p>
+                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{courseVision.course_vision}</p>
+                </div>
+
+                {/* Highlighted Students */}
+                {courseVision.highlighted_students && courseVision.highlighted_students.length > 0 && (
+                  <div>
+                    <p className="text-sm text-green-400 font-semibold mb-2">⭐ Estudiantes Destacados</p>
+                    <div className="space-y-2">
+                      {courseVision.highlighted_students.map((student: any, idx: number) => (
+                        <div key={idx} className="bg-green-900/20 border border-green-700 rounded p-2 text-sm">
+                          <p className="font-semibold text-green-300">{student.nombre}</p>
+                          <p className="text-gray-300 text-xs mt-1">{student.reason}</p>
+                          {student.strengths && student.strengths.length > 0 && (
+                            <ul className="text-xs text-gray-400 mt-1 space-y-0.5 ml-2">
+                              {student.strengths.map((s: string, i: number) => (
+                                <li key={i}>• {s}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* At-Risk Students */}
+                {courseVision.at_risk_students && courseVision.at_risk_students.length > 0 && (
+                  <div>
+                    <p className="text-sm text-orange-400 font-semibold mb-2">⚠️ Requieren Atención</p>
+                    <div className="space-y-2">
+                      {courseVision.at_risk_students.map((student: any, idx: number) => (
+                        <div key={idx} className="bg-orange-900/20 border border-orange-700 rounded p-2 text-sm">
+                          <p className="font-semibold text-orange-300">{student.nombre}</p>
+                          <p className="text-gray-300 text-xs mt-1">{student.reason}</p>
+                          {student.concerns && student.concerns.length > 0 && (
+                            <ul className="text-xs text-gray-400 mt-1 space-y-0.5 ml-2">
+                              {student.concerns.map((c: string, i: number) => (
+                                <li key={i}>• {c}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Dynamics Summary */}
+                {courseVision.dynamics_summary && (
+                  <div>
+                    <p className="text-sm text-blue-400 font-semibold mb-2">🔗 Dinámicas del Grupo</p>
+                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{courseVision.dynamics_summary}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Sort Controls */}
             <div className="flex gap-2 flex-wrap">
