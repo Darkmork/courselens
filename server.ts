@@ -606,6 +606,165 @@ async function startServer() {
     }
   });
 
+  // POST /api/import/forms-batch - Import 3 Google Forms CSVs (Inicio III, Mediados III, Inicio IV)
+  app.post("/api/import/forms-batch", async (req, res) => {
+    try {
+      if (!db) {
+        return res.status(500).json({
+          error: "Firebase not initialized",
+          status: "firebase_not_ready",
+        });
+      }
+
+      const { courseId } = req.body;
+      if (!courseId) {
+        return res.status(400).json({
+          error: "courseId is required",
+          status: "validation_failed",
+        });
+      }
+
+      if (!req.files) {
+        return res.status(400).json({
+          error: "At least one CSV file is required",
+          status: "validation_failed",
+        });
+      }
+
+      const formTypes = ["inicio_III_medio", "mediados_III_medio", "inicio_IV_medio"] as const;
+      const uploadedFiles = req.files;
+      const Papa = (await import("papaparse")).default;
+      const { validateAndMapRow } = await import("./src/lib/csvParser");
+
+      interface BatchResult {
+        formType: string;
+        totalRows: number;
+        imported: number;
+        failed: number;
+        errors: Array<{ row: number; email?: string; reason: string }>;
+      }
+      const batchResults: BatchResult[] = [];
+
+      // Process each form type
+      for (const formType of formTypes) {
+        const fileKey = `${formType}File`;
+        const csvFile = uploadedFiles[fileKey] as fileUpload.UploadedFile | undefined;
+
+        if (!csvFile) {
+          batchResults.push({
+            formType,
+            totalRows: 0,
+            imported: 0,
+            failed: 0,
+            errors: [{ row: 0, reason: "File not uploaded" }],
+          });
+          continue;
+        }
+
+        let rows: any[] = [];
+        let headers: string[] = [];
+
+        // Parse CSV
+        await new Promise<void>((resolve, reject) => {
+          Papa.parse(csvFile.data.toString(), {
+            complete: (results: any) => {
+              headers = results.data[0] || [];
+              rows = results.data.slice(1).filter((row: any[]) => row.some(cell => cell && cell.trim()));
+              resolve();
+            },
+            error: (error: any) => reject(error),
+          });
+        });
+
+        // Validate and map rows
+        const validatedRows = rows.map((row, index) => {
+          const rowObj: Record<string, string> = {};
+          headers.forEach((header, colIndex) => {
+            rowObj[header] = row[colIndex] || "";
+          });
+          return validateAndMapRow(rowObj, formType, index + 2);
+        });
+
+        // Separate valid from invalid
+        const validResponses = validatedRows.filter(r => !r.error).map(r => r.data);
+        const errors = validatedRows.filter(r => r.error).map((r, index) => ({
+          row: index + 2,
+          email: rows[index]["Correo electrónico"] || rows[index]["Correo electronico"],
+          reason: r.error,
+        }));
+
+        // Check student existence and save to Firestore
+        let imported = 0;
+        const studentErrors: Array<{ row: number; email: string; reason: string }> = [];
+
+        for (let i = 0; i < validResponses.length; i++) {
+          const response = validResponses[i];
+
+          try {
+            // Check if student exists
+            const studentQuery = await db
+              .collection("students")
+              .where("email", "==", response.email)
+              .where("courseId", "==", courseId)
+              .limit(1)
+              .get();
+
+            if (studentQuery.empty) {
+              studentErrors.push({
+                row: rows.indexOf(rows[i]) + 2,
+                email: response.email,
+                reason: `Student with email ${response.email} not found in course ${courseId}`,
+              });
+              continue;
+            }
+
+            const studentId = studentQuery.docs[0].id;
+
+            // Save to sub-collection
+            await db
+              .collection("students")
+              .doc(studentId)
+              .collection("formResponses")
+              .doc(response.id)
+              .set(response);
+
+            imported++;
+          } catch (error: any) {
+            studentErrors.push({
+              row: rows.indexOf(rows[i]) + 2,
+              email: response.email,
+              reason: `Database error: ${error.message}`,
+            });
+          }
+        }
+
+        batchResults.push({
+          formType,
+          totalRows: rows.length,
+          imported,
+          failed: validatedRows.filter(r => r.error).length + studentErrors.length,
+          errors: [...errors, ...studentErrors],
+        });
+      }
+
+      res.json({
+        success: true,
+        results: batchResults,
+        summary: {
+          totalImported: batchResults.reduce((sum, r) => sum + r.imported, 0),
+          totalFailed: batchResults.reduce((sum, r) => sum + r.failed, 0),
+        },
+      });
+    } catch (error: any) {
+      console.error("Error importing batch form responses:", error);
+      res.status(500).json({
+        error: "Failed to import batch form responses",
+        details: error.message,
+        status: "error",
+      });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

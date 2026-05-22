@@ -113,6 +113,37 @@ function mapCSVRowToResponses(row: Record<string, string>, formType: FormType): 
       planes: row['¿Tienes algún plan a corto o mediano plazo para trabajar?'],
       consejo_a_ti_mismo: row['¿Qué te gustaría mejorar de ti mismo/a este año?'],
     };
+  } else if (formType === 'mediados_III_medio') {
+    responses.academic = {
+      desempeño: row['¿Cómo ves tu desempeño académico hasta ahora?'],
+      asignaturas_fuertes: row['¿Qué asignaturas te interesan más?']?.split(',').map(s => s.trim()),
+      asignaturas_debiles: row['¿En cuáles tienes dificultades?']?.split(',').map(s => s.trim()),
+      estrategias_estudio: row['¿Qué estrategias te han funcionado para aprender mejor?'],
+    };
+
+    responses.social = {
+      relacion_compañeros: row['¿Cómo te has sentido en tu grupo de compañeros?'],
+      mejores_amigos: row['¿Quiénes son tus mejores amigos en el curso?']?.split(',').map(a => a.trim()),
+      participacion_actividades: row['¿Participaste en alguna actividad del colegio?']?.split(',').map(a => a.trim()),
+      conflictos: row['¿Has tenido algún conflicto que hayas resuelto?'],
+    };
+
+    responses.emotional = {
+      bienestar: row['¿Cómo te has sentido emocionalmente?'],
+      estres: row['¿Qué situaciones te han estresado?'],
+      autoestima: row['¿Cómo te sientes respecto a ti mismo?'] ? (row['¿Cómo te sientes respecto a ti mismo?'].includes('bien') ? 8 : row['¿Cómo te sientes respecto a ti mismo?'].includes('mal') ? 4 : 6) : undefined,
+      confianza: row['¿Tienes confianza en ti mismo?'] ? (row['¿Tienes confianza en ti mismo?'].includes('sí') ? 8 : 4) : undefined,
+    };
+
+    responses.personal_traits = {
+      intereses: row['¿Descubriste nuevos intereses?']?.split(',').map(i => i.trim()),
+      como_se_define: row['¿Cómo te ves ahora comparado con el inicio del año?'],
+    };
+
+    responses.future = {
+      carrera_opcion: row['¿Sigues pensando en la misma carrera?'],
+      planes: row['¿Tienes claro tu plan a futuro?'],
+    };
   } else if (formType === 'fin_I_semestre') {
     responses.academic = {
       desempeño: row['¿Cómo evalúas tu desempeño académico este semestre?'],

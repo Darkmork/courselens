@@ -10,11 +10,12 @@ import ImportSociogram from './pages/ImportSociogram';
 import ImportForms from './pages/ImportForms';
 import Conflicts from './pages/Conflicts';
 import CourseLife from './pages/CourseLife';
+import StudentLife from './pages/StudentLife';
 import Spiritual from './pages/Spiritual';
 import Projects from './pages/Projects';
 import { Layout } from './components/Layout';
 
-export type Page = 'dashboard' | 'students' | 'sociogram' | 'import-sociogram' | 'import-forms' | 'conflicts' | 'course-life' | 'spiritual' | 'projects';
+export type Page = 'dashboard' | 'students' | 'sociogram' | 'import-sociogram' | 'import-forms' | 'conflicts' | 'course-life' | 'student-life' | 'spiritual' | 'projects';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -60,7 +61,9 @@ export default function App() {
       case 'conflicts':
         return <Conflicts />;
       case 'course-life':
-        return <CourseLife />;
+        return <CourseLife onNavigate={setCurrentPage} />;
+      case 'student-life':
+        return <StudentLife onNavigate={setCurrentPage} />;
       case 'spiritual':
         return <Spiritual />;
       case 'projects':
