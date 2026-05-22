@@ -347,6 +347,68 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* CourseLife Section */}
+      <div className="grid md:grid-cols-3 gap-6 mt-8">
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ scale: 1.02 }}
+          className="relative group p-8 rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all cursor-pointer overflow-hidden"
+        >
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
+            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.15), transparent 50%)',
+          }} />
+          <div className="relative z-10">
+            <div className="text-4xl mb-3">📋</div>
+            <h3 className="font-bold text-white text-lg mb-2">Importar Formularios</h3>
+            <p className="text-sm text-neutral-400 mb-4">Carga los 3 momentos de Google Forms (Inicio, Mediados, Final)</p>
+            <span className="text-xs font-mono text-blue-400 group-hover:text-blue-300 flex items-center gap-2">
+              INICIAR <ChevronRight className="w-4 h-4" />
+            </span>
+          </div>
+        </motion.button>
+
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          whileHover={{ scale: 1.02 }}
+          className="relative group p-8 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer overflow-hidden"
+        >
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
+            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(168, 85, 247, 0.15), transparent 50%)',
+          }} />
+          <div className="relative z-10">
+            <div className="text-4xl mb-3">📊</div>
+            <h3 className="font-bold text-white text-lg mb-2">Narrativa del Curso</h3>
+            <p className="text-sm text-neutral-400 mb-4">Visualiza la historia colectiva y la evolución de tu curso</p>
+            <span className="text-xs font-mono text-purple-400 group-hover:text-purple-300 flex items-center gap-2">
+              EXPLORAR <ChevronRight className="w-4 h-4" />
+            </span>
+          </div>
+        </motion.button>
+
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.02 }}
+          className="relative group p-8 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer overflow-hidden"
+        >
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
+            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(16, 185, 129, 0.15), transparent 50%)',
+          }} />
+          <div className="relative z-10">
+            <div className="text-4xl mb-3">👥</div>
+            <h3 className="font-bold text-white text-lg mb-2">Perfiles Individuales</h3>
+            <p className="text-sm text-neutral-400 mb-4">Analiza el viaje de cada estudiante en detalle</p>
+            <span className="text-xs font-mono text-emerald-400 group-hover:text-emerald-300 flex items-center gap-2">
+              VER ESTUDIANTES <ChevronRight className="w-4 h-4" />
+            </span>
+          </div>
+        </motion.button>
+      </div>
+
       <style>{`
         @keyframes shimmer {
           100% { transform: translateX(100%); }
