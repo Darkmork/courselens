@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Loader } from 'lucide-react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { CourseNarrative } from '../components/CourseNarrative';
 import { DigitalBook } from '../components/DigitalBook';
 import type { Page } from '../App';
@@ -19,42 +21,55 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
   const [showBook, setShowBook] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
+    setLoading(true);
+
+    // Load students from Firestore
+    const q = query(collection(db, 'students'), where('courseId', '==', courseId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const studentList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name || 'Estudiante',
+        riskStatus: doc.data().riskStatus || 'Verde',
+        cohortGroup: doc.data().cohortGroup || 'Sin grupo',
+      }));
+      setStudents(studentList);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading students:', error);
+      setLoading(false);
+    });
+
+    // Load course data from Firestore
+    const courseUnsubscribe = onSnapshot(collection(db, 'courses'), (snapshot) => {
+      const course = snapshot.docs.find(doc => doc.id === courseId);
+      if (course) {
+        setCourseData({
+          id: course.id,
+          name: course.data().name || courseId,
+          year: course.data().year || new Date().getFullYear(),
+        });
+      } else {
+        // Fallback if course not found
         setCourseData({
           id: courseId,
-          name: '3° Medio A',
-          year: 2024,
+          name: courseId,
+          year: new Date().getFullYear(),
         });
-
-        setStudents([
-          {
-            id: 'student-1',
-            name: 'Carlos Mendoza',
-            riskStatus: 'Verde',
-            cohortGroup: 'Grupo A',
-          },
-          {
-            id: 'student-2',
-            name: 'María González',
-            riskStatus: 'Verde',
-            cohortGroup: 'Grupo B',
-          },
-          {
-            id: 'student-3',
-            name: 'Juan Pérez',
-            riskStatus: 'Amarillo',
-            cohortGroup: 'Grupo A',
-          },
-        ]);
-      } catch (error) {
-        console.error('Error loading course data:', error);
-      } finally {
-        setLoading(false);
       }
-    };
+    }, (error) => {
+      console.error('Error loading course:', error);
+      // Fallback
+      setCourseData({
+        id: courseId,
+        name: courseId,
+        year: new Date().getFullYear(),
+      });
+    });
 
-    loadData();
+    return () => {
+      unsubscribe();
+      courseUnsubscribe();
+    };
   }, [courseId]);
 
   if (loading) {

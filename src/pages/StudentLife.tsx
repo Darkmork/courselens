@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Loader } from 'lucide-react';
+import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { StudentJourney } from '../components/StudentJourney';
 import { DigitalBook } from '../components/DigitalBook';
 import type { FormResponse } from '../types/FormResponse';
@@ -23,22 +25,41 @@ export const StudentLife: React.FC<StudentLifeProps> = ({ onNavigate, studentId 
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load student data (mock for now)
-        setStudentData({
-          id: studentId,
-          name: 'Estudiante Destacado',
-          email: 'student@example.com',
-        });
+        // Load student data from Firestore
+        const studentDoc = await getDoc(doc(db, 'students', studentId));
+        if (studentDoc.exists()) {
+          setStudentData({
+            id: studentId,
+            name: studentDoc.data().name || 'Estudiante',
+            email: studentDoc.data().email || '',
+          });
+        } else {
+          setStudentData(null);
+          setLoading(false);
+          return;
+        }
 
-        // In production, fetch from API
-        // const response = await fetch(`/api/students/${studentId}/forms`);
-        // const data = await response.json();
-        // setFormResponses(data);
+        // Load form responses from Firestore sub-collection
+        const unsubscribe = onSnapshot(
+          collection(db, 'students', studentId, 'formResponses'),
+          (snapshot) => {
+            const responses: FormResponse[] = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data() as FormResponse,
+            }));
+            setFormResponses(responses);
+            setLoading(false);
+          },
+          (error) => {
+            console.error('Error loading form responses:', error);
+            setFormResponses([]);
+            setLoading(false);
+          }
+        );
 
-        setFormResponses([]);
+        return () => unsubscribe();
       } catch (error) {
         console.error('Error loading student data:', error);
-      } finally {
         setLoading(false);
       }
     };
