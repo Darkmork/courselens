@@ -16,7 +16,7 @@ import {
   ResponsiveContainer,
   Tooltip
 } from 'recharts';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot, limit, orderBy } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Student, RiskStatus } from '../types';
 import { motion } from 'motion/react';
@@ -24,6 +24,7 @@ import { motion } from 'motion/react';
 const Dashboard: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, 'students'));
@@ -33,6 +34,60 @@ const Dashboard: React.FC = () => {
       setLoading(false);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Load recent conflicts and observations as alerts
+  useEffect(() => {
+    const loadAlerts = async () => {
+      try {
+        // Load conflicts
+        const conflictQuery = query(
+          collection(db, 'conflicts'),
+          orderBy('createdAt', 'desc'),
+          limit(3)
+        );
+        const conflictSnapshot = await new Promise((resolve) => {
+          const unsubscribe = onSnapshot(conflictQuery, resolve);
+          return () => unsubscribe();
+        }) as any;
+
+        const conflictAlerts = conflictSnapshot.docs.map((doc: any) => ({
+          type: 'conflict',
+          title: 'Incidente Registrado',
+          student: doc.data().studentName || 'Estudiante',
+          desc: doc.data().description || 'Incidente sin descripción',
+          time: doc.data().createdAt?.toDate?.().toLocaleDateString?.() || 'Hace poco',
+          color: 'amber'
+        }));
+
+        // Load observations
+        const obsQuery = query(
+          collection(db, 'observations'),
+          orderBy('createdAt', 'desc'),
+          limit(3)
+        );
+        const obsSnapshot = await new Promise((resolve) => {
+          const unsubscribe = onSnapshot(obsQuery, resolve);
+          return () => unsubscribe();
+        }) as any;
+
+        const obsAlerts = obsSnapshot.docs.map((doc: any) => ({
+          type: 'observation',
+          title: 'Nota de Seguimiento',
+          student: doc.data().studentName || 'Estudiante',
+          desc: doc.data().note || 'Nota sin contenido',
+          time: doc.data().createdAt?.toDate?.().toLocaleDateString?.() || 'Hace poco',
+          color: 'blue'
+        }));
+
+        setAlerts([...conflictAlerts, ...obsAlerts].slice(0, 3));
+      } catch (error) {
+        console.error('Error loading alerts:', error);
+        setAlerts([]);
+      }
+    };
+
+    loadAlerts();
   }, []);
 
   const riskData = [
@@ -244,16 +299,17 @@ const Dashboard: React.FC = () => {
             </h3>
             <span className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-mono tracking-widest uppercase rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.15)] flex items-center gap-2">
               <Activity className="w-3 h-3" />
-              3 Requieren Atención
+              {alerts.length} {alerts.length === 1 ? 'Requiere' : 'Requieren'} Atención
             </span>
           </div>
           
           <div className="space-y-4">
-            {[
-              { title: "Escalamiento de Riesgo", student: "Lucía M.", desc: "Transición de amarillo a ROJO por caída en índice relacional.", time: "Hace 2h", color: "red" },
-              { title: "Incumplimiento de Acuerdo", student: "Carlos R.", desc: "Protocolo de seguimiento familiar venció el ciclo anterior.", time: "Hace 5h", color: "amber" },
-              { title: "Anomalía de Convivencia", student: "Martín & Sofía", desc: "Patrón de fricción detectado en zona no estructurada.", time: "Hace 1d", color: "blue" }
-            ].map((alert, i) => (
+            {alerts.length === 0 ? (
+              <div className="text-center py-8 text-neutral-500">
+                <p className="text-sm">No hay alertas recientes. El curso está en buen estado.</p>
+              </div>
+            ) : (
+              alerts.map((alert, i) => (
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -281,7 +337,8 @@ const Dashboard: React.FC = () => {
                   </button>
                 </div>
               </motion.div>
-            ))}
+              ))
+            )}
           </div>
 
           <button className="w-full mt-6 py-4 text-center text-xs font-mono font-bold tracking-widest uppercase text-neutral-500 hover:text-white border border-white/5 hover:bg-white/5 rounded-xl transition-all">

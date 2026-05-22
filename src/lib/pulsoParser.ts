@@ -1010,3 +1010,33 @@ export async function parseGroupPDFWithDeepSeek(
     throw error;
   }
 }
+
+/**
+ * Regenerate course vision analysis from already-parsed sociogram data
+ * Used when you want to re-analyze the course without re-parsing markdown files
+ */
+export async function regenerateCourseVision(
+  estudiantes: Array<any>,
+  apiKey?: string
+): Promise<{
+  course_vision: string;
+  highlighted_students: Array<{ nombre: string; reason: string; strengths: string[] }>;
+  at_risk_students: Array<{ nombre: string; reason: string; concerns: string[] }>;
+  dynamics_summary: string;
+}> {
+  const deepseekApiKey = apiKey || process.env.DEEPSEEK_API_KEY;
+  if (!deepseekApiKey) {
+    throw new Error('DEEPSEEK_API_KEY is required');
+  }
+
+  console.log(`Regenerating course vision for ${estudiantes.length} students...`);
+
+  const courseVision = await analyzeCourseVisionWithDeepSeek(
+    estudiantes,
+    estudiantes,
+    deepseekApiKey
+  );
+
+  console.log('✓ Course vision analysis regenerated');
+  return courseVision;
+}

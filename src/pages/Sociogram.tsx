@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { SociogramData } from '../types';
-import { Share2, Info, Upload, AlertCircle, Loader } from 'lucide-react';
+import { Share2, Info, Upload, AlertCircle, Loader, Sparkles } from 'lucide-react';
 import type { Page } from '../App';
 import { YearSelector } from '../components/YearSelector';
 
@@ -17,6 +17,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
   const [isLoadingSociogram, setIsLoadingSociogram] = useState(true);
   const [hasNoData, setHasNoData] = useState(false);
   const [sortBy, setSortBy] = useState<'nombre' | 'bienestar' | 'menciones_positivas' | 'menciones_negativas'>('nombre');
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const courseId = 'course-1';
 
@@ -76,6 +77,37 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       unsubscribeAnalysis();
     };
   }, [selectedYear, courseId]);
+
+  const handleRegenerateCourseVision = async () => {
+    if (!sociogramData) return;
+
+    setIsRegenerating(true);
+    try {
+      const response = await fetch('/api/regenerate-course-vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year: selectedYear,
+          courseId,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+        return;
+      }
+
+      const data = await response.json();
+      setCourseVision(data.courseVision);
+      alert('✓ Análisis del curso regenerado exitosamente');
+    } catch (error) {
+      console.error('Error regenerating course vision:', error);
+      alert(`Error al regenerar: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   const getSortedStudents = () => {
     if (!sociogramData) return [];
@@ -143,6 +175,20 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                 title="Importar desde PULSO.cl"
               >
                 <Upload className="w-5 h-5" />
+              </button>
+            )}
+            {sociogramData && (
+              <button
+                onClick={handleRegenerateCourseVision}
+                disabled={isRegenerating}
+                className="p-3 bg-purple-600/20 text-purple-400 rounded-xl hover:bg-purple-600/30 transition-all border border-purple-500/30 disabled:opacity-50"
+                title="Regenerar análisis del curso"
+              >
+                {isRegenerating ? (
+                  <Loader className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-5 h-5" />
+                )}
               </button>
             )}
             <button

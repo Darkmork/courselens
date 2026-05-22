@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
 import * as admin from "firebase-admin";
-import { parseGroupPDFWithDeepSeek, parseMarkdownSociogram, parseSociogramWithAnalysis } from "./src/lib/pulsoParser";
+import { parseGroupPDFWithDeepSeek, parseMarkdownSociogram, parseSociogramWithAnalysis, regenerateCourseVision } from "./src/lib/pulsoParser";
 import { calculateMetrics } from "./src/lib/sociogramMetrics";
 import type { SociogramData, SociogramRelation } from "./src/types/index";
 
@@ -352,6 +352,85 @@ async function startServer() {
       res.status(500).json({
         error: "Failed to import sociogram",
         details: error instanceof Error ? error.message : String(error),
+        status: "error",
+      });
+    }
+  });
+
+  // POST /api/regenerate-course-vision - Regenerate course analysis from existing sociogram data
+  app.post("/api/regenerate-course-vision", async (req, res) => {
+    try {
+      if (!db) {
+        return res.status(500).json({
+          error: "Firebase not initialized",
+          status: "firebase_not_ready",
+        });
+      }
+
+      const { year, courseId } = req.body;
+      if (!year || !courseId) {
+        return res.status(400).json({
+          error: "year and courseId are required",
+          status: "validation_failed",
+        });
+      }
+
+      console.log(`Regenerating course vision for ${courseId}, year ${year}`);
+
+      // Read existing sociogram data from Firestore
+      try {
+        const sociogramRef = db.collection(`sociogram_${year}`).doc(courseId);
+        const sociogramDoc = await sociogramRef.get();
+
+        if (!sociogramDoc.exists) {
+          return res.status(404).json({
+            error: `No sociogram data found for course ${courseId} in year ${year}`,
+            status: "not_found",
+          });
+        }
+
+        const sociogramData = sociogramDoc.data();
+        const estudiantes = sociogramData.estudiantes || [];
+
+        if (estudiantes.length === 0) {
+          return res.status(400).json({
+            error: "No student data available to analyze",
+            status: "invalid_data",
+          });
+        }
+
+        // Regenerate course vision analysis
+        const courseVision = await regenerateCourseVision(estudiantes);
+
+        // Save updated analysis to Firestore
+        const analysisRef = db.collection(`sociogram_analysis_${year}`).doc(courseId);
+        await analysisRef.set({
+          ...courseVision,
+          timestamp: admin.firestore.Timestamp.now(),
+          year: parseInt(year),
+          courseId,
+        });
+
+        console.log(`✓ Course vision regenerated and saved for ${courseId}`);
+
+        res.json({
+          success: true,
+          message: "Course vision analysis regenerated successfully",
+          courseVision,
+        });
+      } catch (error: any) {
+        console.error("Error reading sociogram data:", error);
+        res.status(500).json({
+          error: "Failed to regenerate course vision",
+          details: error.message,
+          status: "error",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in regenerate-course-vision:", error);
+      res.status(500).json({
+        error: "Failed to regenerate course vision",
+        details: error.message,
         status: "error",
       });
     }
