@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Database:** Firebase Firestore (NoSQL)
 - **Authentication:** Firebase Auth (Google Login)
 - **AI:** Google Gemini 1.5 Flash (integrated server-side via `@google/genai`), DeepSeek API (growth narratives)
-- **Visualization:** Cytoscape.js (sociogram), Recharts (analytics), Lucide icons
+- **Visualization:** Recharts (analytics), Lucide icons; Sociogram uses sortable data table (replaced Cytoscape.js)
 - **Data:** PapaParse (CSV), xlsx, FileSaver (exports), CSV file upload via express-fileupload
 - **PDF Parsing:** pdfjs-dist (text extraction), pdf-parse (server-side)
 - **File Upload:** express-fileupload (multipart form data)
@@ -35,7 +35,9 @@ npm run clean        # Remove dist/ and server.js
   - **Sociogram** — Relational network visualization with real Firestore data, YearSelector for multi-year navigation
   - **ImportSociogram** — PDF upload form for PULSO.cl group + individual reports
   - **ImportForms** — CSV import for Google Forms responses (timeline data: inicio_III_medio, fin_I_semestre, inicio_IV_medio)
-  - **Students** — Includes Crecimiento tab with StudentGrowthTimeline, FormResponseCard, GrowthComparative components
+  - **Students** — Student list + Crecimiento tab with StudentGrowthTimeline, FormResponseCard, GrowthComparative
+  - **CourseLife** — Course-level reportage with AI-generated narratives and collective journey visualization
+  - **StudentLife** — Individual student narrative timeline with AI generation
 - `src/components/` — Reusable UI components (Login, Layout, Logo)
   - **YearSelector** — Year navigation tabs (2024-2027) with prev/next buttons
   - **StudentGrowthTimeline** — Visual timeline of growth responses over time
@@ -62,7 +64,8 @@ Express server handling:
 - **`POST /api/import/form-responses`** — Google Forms response import (CSV file upload)
   - Accepts: csvFile, formType (inicio_III_medio | fin_I_semestre | inicio_IV_medio), courseId
   - Returns: importedCount, validationErrors[], summary of parsed responses
-  - Saves to `form_responses/${courseId}` collection with timestamp and form type
+  - Saves to `students/{studentId}/formResponses/{responseId}` as a sub-collection of each student, with timestamp and form type
+  - Note: Form responses are stored as a sub-collection under each student document, not at the course level
 - **`POST /api/ai/generate-growth-narrative`** — AI-powered growth narrative generation
   - Accepts: formResponses (array), studentName
   - Uses DeepSeek API to generate personalized growth narratives
