@@ -57,19 +57,30 @@ Express server handling:
 - `/api/ai/analyze-risk` — Student risk assessment via Gemini
 - `/api/ai/summarize-student` — Parent meeting summary generation
 - `/api/ai/generate-report` — Course health report generation
+- **`POST /api/regenerate-course-vision`** — Regenerate course analysis from existing sociogram data
+  - Accepts: year, courseId
+  - Reads sociogram data from `sociogram_${year}/${courseId}`, regenerates analysis via AI
+  - Saves to `sociogram_analysis_${year}/${courseId}` collection
 - **`POST /api/import/sociogram`** — PULSO.cl PDF import (multipart file upload)
   - Accepts: groupPdf, individualPdf, year, courseId
   - Returns: studentCount, relationCount, metrics (cohesion, fragmentation, leadership, isolation)
   - Saves to `sociogram_${year}/${courseId}` collection
-- **`POST /api/import/form-responses`** — Google Forms response import (CSV file upload)
+- **`POST /api/import/form-responses`** — Single Google Forms CSV import
   - Accepts: csvFile, formType (inicio_III_medio | fin_I_semestre | inicio_IV_medio), courseId
   - Returns: importedCount, validationErrors[], summary of parsed responses
   - Saves to `students/{studentId}/formResponses/{responseId}` as a sub-collection of each student, with timestamp and form type
-  - Note: Form responses are stored as a sub-collection under each student document, not at the course level
+- **`POST /api/import/forms-batch`** — Batch import of 3 Google Forms CSVs at once
+  - Accepts: courseId, inicio_III_medioFile, mediados_III_medioFile, inicio_IV_medioFile (multipart)
+  - Returns: batchResults[] with per-form-type counts and errors
+  - Efficiently imports all three timeline forms in one request
 - **`POST /api/ai/generate-growth-narrative`** — AI-powered growth narrative generation
   - Accepts: formResponses (array), studentName
   - Uses DeepSeek API to generate personalized growth narratives
   - Returns: narrative text describing student evolution, patterns, and future projections
+- **`POST /api/generate/student-narrative`** — Generate AI narrative for student journey
+  - Accepts: studentId, studentName, formResponses (array, min 2 responses)
+  - Sorts responses by form type (inicio_III_medio -> mediados_III_medio -> inicio_IV_medio)
+  - Generates 300-500 word Spanish narrative via DeepSeek, saves to Firestore
 - Vite middleware in dev, static serving in production
 
 ### Database (Firestore)
