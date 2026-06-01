@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { DEFAULT_COURSE_ID } from '../lib/constants';
 import { OrientationSession } from '../types';
 import { Sparkles, Plus, BookOpen, Quote } from 'lucide-react';
 
 export default function Spiritual() {
   const [sessions, setSessions] = useState<OrientationSession[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const courseId = 'course-1'; // Hardcoded for prototype
+  const courseId = DEFAULT_COURSE_ID;
 
   useEffect(() => {
     const q = query(collection(db, 'sessions')); 

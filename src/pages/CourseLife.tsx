@@ -4,6 +4,7 @@ import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestor
 import { db } from '../lib/firebase';
 import { CourseNarrative } from '../components/CourseNarrative';
 import { DigitalBook } from '../components/DigitalBook';
+import { DEFAULT_COURSE_ID } from '../lib/constants';
 import type { Page } from '../App';
 import type { FormResponse } from '../types/FormResponse';
 import type { SociogramData } from '../types';
@@ -15,7 +16,7 @@ interface CourseLifeProps {
 
 export const CourseLife: React.FC<CourseLifeProps> = ({
   onNavigate,
-  courseId = 'course-1',
+  courseId = DEFAULT_COURSE_ID,
 }) => {
   const [courseData, setCourseData] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);

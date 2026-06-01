@@ -5,6 +5,7 @@ import { SociogramData } from '../types';
 import { Share2, Info, Upload, AlertCircle, Loader, Sparkles } from 'lucide-react';
 import type { Page } from '../App';
 import { YearSelector } from '../components/YearSelector';
+import { DEFAULT_YEARS } from '../lib/constants';
 
 interface SociogramProps {
   onNavigate?: (page: Page) => void;
@@ -202,7 +203,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
         <YearSelector
           selectedYear={selectedYear}
           onYearChange={setSelectedYear}
-          availableYears={[2024, 2025, 2026, 2027]}
+          availableYears={DEFAULT_YEARS}
         />
       </header>
 

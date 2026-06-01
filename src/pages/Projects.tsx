@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { DEFAULT_COURSE_ID } from '../lib/constants';
 import { Project, ProjectStatus } from '../types';
 import { KanbanSquare, Plus, Clock, CheckCircle2 } from 'lucide-react';
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const courseId = 'course-1'; // Hardcoded for prototype
+  const courseId = DEFAULT_COURSE_ID;
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'projects'), (snapshot) => {

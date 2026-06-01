@@ -5,6 +5,7 @@ import { db } from '../lib/firebase';
 import { StudentJourney } from '../components/StudentJourney';
 import { DigitalBook } from '../components/DigitalBook';
 import type { FormResponse } from '../types/FormResponse';
+import { DEFAULT_STUDENT_ID } from '../lib/constants';
 import type { Page } from '../App';
 
 interface StudentLifeProps {
@@ -12,7 +13,7 @@ interface StudentLifeProps {
   studentId?: string;
 }
 
-export const StudentLife: React.FC<StudentLifeProps> = ({ onNavigate, studentId = 'student-1' }) => {
+export const StudentLife: React.FC<StudentLifeProps> = ({ onNavigate, studentId = DEFAULT_STUDENT_ID }) => {
   const [studentData, setStudentData] = useState<{
     id: string;
     name: string;

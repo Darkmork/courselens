@@ -7,7 +7,7 @@ export interface YearSelectorProps {
   availableYears?: number[];
 }
 
-const DEFAULT_YEARS = [2024, 2025, 2026, 2027];
+import { DEFAULT_YEARS } from '../lib/constants';
 
 export function YearSelector({
   selectedYear,
