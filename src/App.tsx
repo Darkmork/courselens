@@ -14,6 +14,7 @@ import StudentLife from './pages/StudentLife';
 import Spiritual from './pages/Spiritual';
 import Projects from './pages/Projects';
 import { Layout } from './components/Layout';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
 export type Page = 'dashboard' | 'students' | 'sociogram' | 'import-sociogram' | 'import-forms' | 'conflicts' | 'course-life' | 'student-life' | 'spiritual' | 'projects';
@@ -38,13 +39,6 @@ export default function App() {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
-  }
-
-  if (!user) {
-    if (showLogin) {
-      return <Login onBack={() => setShowLogin(false)} />;
-    }
-    return <Landing onLoginClick={() => setShowLogin(true)} />;
   }
 
   const renderPage = () => {
@@ -76,9 +70,15 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
-        {renderPage()}
-      </Layout>
+      <ProtectedRoute
+        user={user}
+        showLogin={showLogin}
+        onLoginClick={() => setShowLogin(true)}
+      >
+        <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+          {renderPage()}
+        </Layout>
+      </ProtectedRoute>
     </ErrorBoundary>
   );
 }
