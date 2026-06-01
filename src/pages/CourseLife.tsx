@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Loader } from 'lucide-react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { CourseNarrative } from '../components/CourseNarrative';
 import { DigitalBook } from '../components/DigitalBook';
 import type { Page } from '../App';
+import type { FormResponse } from '../types/FormResponse';
+import type { SociogramData } from '../types';
 
 interface CourseLifeProps {
   onNavigate?: (page: Page) => void;
@@ -19,6 +21,89 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBook, setShowBook] = useState(false);
+  const [stats, setStats] = useState({
+    formResponsesCount: 0,
+    momentsCaptured: [] as string[],
+    cohesionScore: undefined as number | undefined,
+    leadershipScore: undefined as number | undefined,
+    emotionalWellness: undefined as number | undefined,
+  });
+
+  // Compute stats from Firestore data
+  useEffect(() => {
+    if (students.length === 0) return;
+
+    let totalFormResponses = 0;
+    const formTypesSet = new Set<string>();
+    let totalEmotionalWellness = 0;
+    let emotionalCount = 0;
+
+    const fetchFormResponses = async () => {
+      for (const student of students) {
+        try {
+          const formResponsesRef = collection(db, 'students', student.id, 'formResponses');
+          const formResponsesSnap = await getDocs(formResponsesRef);
+          totalFormResponses += formResponsesSnap.size;
+
+          formResponsesSnap.forEach(doc => {
+            const data = doc.data() as FormResponse;
+            if (data.formType) {
+              formTypesSet.add(data.formType);
+            }
+            if (data.responses?.emotional?.bienestar) {
+              // Parse emotional wellness from text (e.g., "7/10" or "Bien")
+              const wellbeing = data.responses.emotional.bienestar;
+              const match = wellbeing.match(/(\d+)/);
+              if (match) {
+                totalEmotionalWellness += parseInt(match[1], 10);
+                emotionalCount++;
+              }
+            }
+          });
+        } catch (error) {
+          console.error(`Error fetching form responses for student ${student.id}:`, error);
+        }
+      }
+
+      const momentsArray = Array.from(formTypesSet);
+      const avgEmotionalWellness = emotionalCount > 0 ? totalEmotionalWellness / emotionalCount : undefined;
+
+      setStats(prev => ({
+        ...prev,
+        formResponsesCount: totalFormResponses,
+        momentsCaptured: momentsArray,
+        emotionalWellness: avgEmotionalWellness,
+      }));
+    };
+
+    fetchFormResponses();
+  }, [students]);
+
+  // Fetch sociogram data for cohesion and leadership scores
+  useEffect(() => {
+    if (!courseData?.year) return;
+
+    const sociogramCollection = `sociogram_${courseData.year}`;
+    const unsubscribe = onSnapshot(
+      collection(db, sociogramCollection),
+      (snapshot) => {
+        const courseSociogram = snapshot.docs.find(doc => doc.id === courseId);
+        if (courseSociogram) {
+          const data = courseSociogram.data() as SociogramData;
+          setStats(prev => ({
+            ...prev,
+            cohesionScore: data.metricas?.cohesion,
+            leadershipScore: data.metricas?.liderazgo_promedio,
+          }));
+        }
+      },
+      (error) => {
+        console.error('Error loading sociogram data:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [courseId, courseData?.year]);
 
   useEffect(() => {
     setLoading(true);
@@ -126,11 +211,11 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
             students={students}
             stats={{
               totalStudents: students.length,
-              formResponsesCount: 50,
-              momentsCapured: ['inicio_III_medio', 'mediados_III_medio', 'inicio_IV_medio'],
-              cohesionScore: 8,
-              leadershipScore: 7,
-              emotionalWellness: 7.5,
+              formResponsesCount: stats.formResponsesCount,
+              momentsCapured: stats.momentsCaptured,
+              cohesionScore: stats.cohesionScore,
+              leadershipScore: stats.leadershipScore,
+              emotionalWellness: stats.emotionalWellness,
             }}
             onExportBook={() => setShowBook(true)}
           />
