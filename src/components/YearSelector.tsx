@@ -14,8 +14,7 @@ export function YearSelector({
   onYearChange,
   availableYears = DEFAULT_YEARS
 }: YearSelectorProps) {
-  // Fix Issue 2: Use immutable sort to avoid mutating the prop
-  const years = [...availableYears].sort((a, b) => a - b);
+  const years = [...availableYears];
 
   // Fix Issue 3: Handle edge case where selectedYear is not in availableYears
   let currentIndex = years.indexOf(selectedYear);
