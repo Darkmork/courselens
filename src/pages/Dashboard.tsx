@@ -16,7 +16,7 @@ import {
   ResponsiveContainer,
   Tooltip
 } from 'recharts';
-import { collection, query, onSnapshot, limit, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Student, RiskStatus, SociogramData } from '../types';
 import { motion } from 'motion/react';
@@ -74,14 +74,17 @@ const Dashboard: React.FC = () => {
   }, [currentYear, courseId]);
 
   useEffect(() => {
-    const q = query(collection(db, 'students'));
+    const q = query(
+      collection(db, 'students'),
+      where('courseId', '==', courseId)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const studentData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
       setStudents(studentData);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [courseId]);
 
   // Load recent conflicts and observations as alerts
   useEffect(() => {
