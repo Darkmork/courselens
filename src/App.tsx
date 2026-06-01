@@ -14,6 +14,7 @@ import StudentLife from './pages/StudentLife';
 import Spiritual from './pages/Spiritual';
 import Projects from './pages/Projects';
 import { Layout } from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export type Page = 'dashboard' | 'students' | 'sociogram' | 'import-sociogram' | 'import-forms' | 'conflicts' | 'course-life' | 'student-life' | 'spiritual' | 'projects';
 
@@ -74,8 +75,10 @@ export default function App() {
   };
 
   return (
-    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
-      {renderPage()}
-    </Layout>
+    <ErrorBoundary>
+      <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+        {renderPage()}
+      </Layout>
+    </ErrorBoundary>
   );
 }
