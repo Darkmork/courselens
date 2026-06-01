@@ -1,4 +1,4 @@
-import { StudentSociogramData } from '../types/index';
+import { StudentSociogramData, SociogramRelation } from '../types/index';
 
 /**
  * PULSO.cl PDF Parser Utility
@@ -1039,4 +1039,27 @@ export async function regenerateCourseVision(
 
   console.log('✓ Course vision analysis regenerated');
   return courseVision;
+}
+
+/**
+ * Extract visual relationships from group PDF using DeepSeek VL2 vision model
+ * TODO: Implement in Task 3 - convert PDF pages to images and analyze with VL2
+ *
+ * @param pdfBuffer Raw PDF file buffer
+ * @param studentNames Array of student names to look for in the sociogram
+ * @param apiKey DeepSeek API key
+ * @returns Promise with array of extracted relations
+ */
+export async function extractRelationsFromPDF(
+  pdfBuffer: Buffer,
+  studentNames: string[],
+  apiKey: string
+): Promise<SociogramRelation[]> {
+  // TODO: Implement vision-based relation extraction
+  // This requires:
+  // 1. Convert PDF pages to images (using pdfjs-dist)
+  // 2. Send images to DeepSeek VL2 for visual graph analysis
+  // 3. Parse the response to extract relationships between students
+  console.log('[extractRelationsFromPDF] TODO - Not yet implemented, returning empty relations');
+  return [];
 }

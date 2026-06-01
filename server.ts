@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
 import * as admin from "firebase-admin";
-import { parseGroupPDFWithDeepSeek, parseMarkdownSociogram, parseSociogramWithAnalysis, regenerateCourseVision } from "./src/lib/pulsoParser";
+import { extractRelationsFromPDF, parseGroupPDFWithDeepSeek, parseMarkdownSociogram, parseSociogramWithAnalysis, regenerateCourseVision } from "./src/lib/pulsoParser";
 import { calculateMetrics } from "./src/lib/sociogramMetrics";
 import type { SociogramData, SociogramRelation } from "./src/types/index";
 
@@ -231,9 +231,9 @@ async function startServer() {
       }
 
       // Validate file upload - now require BOTH files
-      if (!req.files || !req.files.groupMarkdown || !req.files.individualMarkdown) {
+      if (!req.files || !req.files.groupPdf || !req.files.individualMarkdown) {
         return res.status(400).json({
-          error: "Both group and individual markdown files are required for course analysis",
+          error: "Group PDF and individual markdown files are required for course analysis",
           status: "validation_failed",
         });
       }
@@ -246,19 +246,18 @@ async function startServer() {
         });
       }
 
-      const groupMarkdownFile = req.files.groupMarkdown as fileUpload.UploadedFile;
+      const groupPdfFile = req.files.groupPdf as fileUpload.UploadedFile;
       const individualMarkdownFile = req.files.individualMarkdown as fileUpload.UploadedFile;
 
       console.log(`Importing sociogram for course ${courseId}, year ${year}`);
-      console.log(`Group markdown file: ${groupMarkdownFile.name}`);
+      console.log(`Group PDF file: ${groupPdfFile.name}`);
       console.log(`Individual markdown file: ${individualMarkdownFile.name}`);
 
-      // Convert buffers to strings
-      const groupContent = groupMarkdownFile.data.toString('utf-8');
+      // Convert buffer to string for individual markdown
       const individualContent = individualMarkdownFile.data.toString('utf-8');
 
-      // Parse both files and generate course analysis
-      const analysisResult = await parseSociogramWithAnalysis(groupContent, individualContent);
+      // Parse individual markdown file and generate course analysis
+      const analysisResult = await parseSociogramWithAnalysis(null, individualContent);
       const { studentData, courseVision } = analysisResult;
 
       console.log(`Parsed ${studentData.length} students from markdown reports`);
@@ -281,8 +280,20 @@ async function startServer() {
         },
       }));
 
-      // Build relations (empty for now - no visual edges from markdown)
-      const relaciones: SociogramRelation[] = [];
+      // Extract visual relationships from group PDF using vision model
+      console.log('Extracting visual relationships from group PDF with deepseek-vl2...');
+      const studentNames = estudiantes.map((e: any) => e.nombre);
+      let relaciones: SociogramRelation[] = [];
+      try {
+        relaciones = await extractRelationsFromPDF(
+          groupPdfFile.data,
+          studentNames,
+          process.env.DEEPSEEK_API_KEY || ''
+        );
+        console.log(`Extracted ${relaciones.length} relations from PDF visual graphs`);
+      } catch (relError) {
+        console.warn('Failed to extract relations from PDF, using empty array:', relError);
+      }
 
       // Calculate metrics
       const metricas = calculateMetrics({
