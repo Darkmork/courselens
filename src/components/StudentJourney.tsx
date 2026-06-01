@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Heart, Brain, Zap, BookOpen, Users, Lightbulb, Calendar } from 'lucide-react';
 import type { FormResponse } from '../types/FormResponse';
+import { MOMENT_LABELS, MOMENT_DATES } from '../lib/constants';
 
 interface StudentJourneyProps {
   studentId: string;
@@ -16,16 +17,9 @@ interface Insight {
   icon: React.ReactNode;
 }
 
-const MOMENT_LABELS = {
-  inicio_III_medio: 'Inicio III',
-  mediados_III_medio: 'Mediados III',
-  inicio_IV_medio: 'Inicio IV',
-};
-
-const MOMENT_DATES = {
-  inicio_III_medio: 'Marzo 2024',
-  mediados_III_medio: 'Junio 2024',
-  inicio_IV_medio: 'Septiembre 2024',
+// Safe field accessor with validation and fallback
+const getFieldValue = <T,>(obj: T | undefined | null, fallback: T): T => {
+  return obj ?? fallback;
 };
 
 export const StudentJourney: React.FC<StudentJourneyProps> = ({
@@ -55,7 +49,8 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
       const last = sorted[sorted.length - 1];
 
       if (first.responses.emotional && last.responses.emotional) {
-        const stressChange = (last.responses.emotional.estres ? -1 : 1);
+        const stressValue = getFieldValue(last.responses.emotional.estres, '');
+        const stressChange = stressValue ? -1 : 1;
         insights_list.push({
           category: 'Bienestar',
           change: stressChange,
@@ -65,7 +60,8 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
       }
 
       if (first.responses.future && last.responses.future) {
-        const careerClarity = last.responses.future.carrera_opcion ? 1 : 0;
+        const careerValue = getFieldValue(last.responses.future.carrera_opcion, '');
+        const careerClarity = careerValue ? 1 : 0;
         insights_list.push({
           category: 'Vocación',
           change: careerClarity,
@@ -75,7 +71,8 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
       }
 
       if (first.responses.social && last.responses.social) {
-        const hasGroup = last.responses.social.pertenencia_grupo ? 1 : -1;
+        const groupValue = getFieldValue(last.responses.social.pertenencia_grupo, false);
+        const hasGroup = groupValue ? 1 : -1;
         insights_list.push({
           category: 'Relaciones',
           change: hasGroup,
