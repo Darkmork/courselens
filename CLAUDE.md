@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Backend:** Express.js (Node.js) running via `tsx` in dev, `esbuild` in production
 - **Database:** Firebase Firestore (NoSQL)
 - **Authentication:** Firebase Auth (Google Login)
-- **AI:** Google Gemini 1.5 Flash (integrated server-side via `@google/genai`), DeepSeek API (growth narratives)
+- **AI:** Google Gemini 1.5 Flash (for analyze-risk), DeepSeek API (for growth narratives, student/course narratives)
 - **Visualization:** Recharts (analytics), Lucide icons; Sociogram uses sortable data table (replaced Cytoscape.js)
 - **Data:** PapaParse (CSV), xlsx, FileSaver (exports), CSV file upload via express-fileupload
 - **PDF Parsing:** pdfjs-dist (text extraction), pdf-parse (server-side)

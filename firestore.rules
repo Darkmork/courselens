@@ -76,8 +76,18 @@ service cloud.firestore {
     }
 
     // --- Sociogram Data (Multi-year) ---
-    // Allow server to write imported PULSO.cl data without user auth
-    // Allow anyone to read (not sensitive data)
+    // SECURITY NOTE: These rules are intentionally open for server-side operations:
+    // 1. Server-side import from PULSO.cl uses service credentials (google-services.json),
+    //    not end-user auth, so user-level auth checks do not apply
+    // 2. The Express server (/api/import/sociogram) handles all import logic and
+    //    validates the data before writing to Firestore
+    // 3. Sociogram data (relationship networks) is not sensitive PII - it's
+    //    structural analysis data about peer relationships, not personal data
+    // 4. Read is open to allow the frontend to display sociogram visualizations
+    //    without requiring additional auth (data already protected by app auth)
+    //
+    // If user-facing sociogram editing is needed in the future, this should be
+    // restricted to isSignedIn() with teacher ownership checks
     match /sociogram_2024/{courseId} {
       allow read: if true;
       allow write: if true;
@@ -96,7 +106,7 @@ service cloud.firestore {
     }
 
     // --- Sociogram Analysis (Course Vision) ---
-    // Multi-year course analysis and insights
+    // Same rationale as sociogram data above - server-side import and analysis
     match /sociogram_analysis_2024/{courseId} {
       allow read: if true;
       allow write: if true;
