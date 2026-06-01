@@ -110,7 +110,7 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
 
     // Load students from Firestore
     const q = query(collection(db, 'students'), where('courseId', '==', courseId));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const studentsUnsubscribe = onSnapshot(q, (snapshot) => {
       const studentList = snapshot.docs.map(doc => ({
         id: doc.id,
         name: doc.data().name || 'Estudiante',
@@ -125,7 +125,7 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
     });
 
     // Load course data from Firestore
-    const courseUnsubscribe = onSnapshot(collection(db, 'courses'), (snapshot) => {
+    const coursesUnsubscribe = onSnapshot(collection(db, 'courses'), (snapshot) => {
       const course = snapshot.docs.find(doc => doc.id === courseId);
       if (course) {
         setCourseData({
@@ -152,8 +152,8 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
     });
 
     return () => {
-      unsubscribe();
-      courseUnsubscribe();
+      studentsUnsubscribe();
+      coursesUnsubscribe();
     };
   }, [courseId]);
 
