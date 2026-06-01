@@ -91,7 +91,7 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
   const generateNarrative = async () => {
     setGeneratingNarrative(true);
     try {
-      const response = await fetch('/api/generate/student-narrative', {
+      const response = await fetch('/api/ai/student-narrative', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

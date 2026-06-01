@@ -50,7 +50,7 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
   const generateNarrative = async () => {
     setGeneratingNarrative(true);
     try {
-      const response = await fetch('/api/generate/course-narrative', {
+      const response = await fetch('/api/ai/course-narrative', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -244,30 +244,41 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
 
       {/* Key Insights */}
       <div className="grid md:grid-cols-2 gap-4">
-        {[
-          {
-            title: 'Fortalezas Colectivas',
-            items: [
-              '✓ Grupo con fuerte sentido de comunidad',
-              '✓ Diversidad de talentos y vocaciones',
-              '✓ Mejora en bienestar emocional entre momentos',
-            ],
-            icon: TrendingUp,
-            color: 'from-green-500/20 to-emerald-500/20',
-            border: 'border-green-500/30',
-          },
-          {
-            title: 'Áreas de Crecimiento',
-            items: [
-              '⚠ Algunos estudiantes requieren apoyo académico adicional',
-              '⚠ Dinámicas sociales que necesitan mediación',
-              '⚠ Claridad vocacional en construcción para algunos',
-            ],
-            icon: AlertCircle,
-            color: 'from-yellow-500/20 to-orange-500/20',
-            border: 'border-yellow-500/30',
-          },
-        ].map((section, idx) => {
+        {(() => {
+          // Generate insights dynamically from student data
+          const redCount = students.filter((s: any) => s.riskStatus === 'Rojo').length;
+          const yellowCount = students.filter((s: any) => s.riskStatus === 'Amarillo').length;
+          const greenCount = students.filter((s: any) => s.riskStatus === 'Verde').length;
+
+          const strengths = [
+            greenCount > 0 && `✓ ${greenCount} estudiantes sin riesgo académico/emocional`,
+            students.length > 0 && `✓ ${Math.round((greenCount / students.length) * 100)}% del grupo en buen estado`,
+            allFormResponses.length > 0 && `✓ ${allFormResponses.length} respuestas de formularios registradas`,
+          ].filter(Boolean);
+
+          const areas = [
+            redCount > 0 && `⚠ ${redCount} estudiante(s) requiere(n) atención prioritaria`,
+            yellowCount > 0 && `⚠ ${yellowCount} estudiante(s) en seguimiento (riesgo medio)`,
+            students.length > 0 && yellowCount + redCount > 0 && `⚠ Trabajar dinámicas de apoyo peer-to-peer`,
+          ].filter(Boolean);
+
+          return [
+            {
+              title: 'Fortalezas Colectivas',
+              items: strengths.length > 0 ? (strengths as string[]) : ['✓ Datos pendientes de análisis'],
+              icon: TrendingUp,
+              color: 'from-green-500/20 to-emerald-500/20',
+              border: 'border-green-500/30',
+            },
+            {
+              title: 'Áreas de Crecimiento',
+              items: areas.length > 0 ? (areas as string[]) : ['⚠ Sin áreas críticas identificadas'],
+              icon: AlertCircle,
+              color: 'from-yellow-500/20 to-orange-500/20',
+              border: 'border-yellow-500/30',
+            },
+          ];
+        })().map((section, idx) => {
           const Icon = section.icon;
           return (
             <div
