@@ -1,4 +1,5 @@
 import { StudentSociogramData, SociogramRelation } from '../types/index';
+import OpenAI from 'openai';
 
 /**
  * PULSO.cl PDF Parser Utility
@@ -1042,8 +1043,137 @@ export async function regenerateCourseVision(
 }
 
 /**
+ * Lazy load canvas for Node.js environment
+ */
+let canvasModule: any = null;
+async function getCanvas() {
+  if (canvasModule === undefined) {
+    try {
+      canvasModule = await import('canvas');
+    } catch (e) {
+      console.warn('canvas package not available, skipping image rendering');
+      canvasModule = null;
+    }
+  }
+  return canvasModule;
+}
+
+/**
+ * Render a PDF page to a base64-encoded JPEG image
+ */
+async function renderPdfPageToImage(
+  pdf: any,
+  pageNum: number,
+  scale: number = 2.0
+): Promise<string> {
+  const page = await pdf.getPage(pageNum);
+  const viewport = page.getViewport({ scale });
+
+  const mod = await getCanvas();
+  if (!mod) {
+    console.warn('Canvas not available for PDF rendering');
+    return '';
+  }
+
+  const createCanvas = mod.createCanvas || mod.default?.createCanvas;
+  if (!createCanvas) {
+    console.warn('canvas.createCanvas not found');
+    return '';
+  }
+
+  const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height));
+  const ctx = canvas.getContext('2d');
+
+  await page.render({
+    canvasContext: ctx,
+    viewport: viewport,
+  }).promise;
+
+  return canvas.toDataURL('image/jpeg').split(',')[1];
+}
+
+/**
+ * Extract relationship edges from a sociogram visual graph using deepseek-vl2
+ */
+async function extractRelationsWithVL2(
+  imageBase64: string,
+  studentNames: string[],
+  apiKey: string
+): Promise<SociogramRelation[]> {
+  const deepseek = new OpenAI({ apiKey, baseURL: 'https://api.deepseek.com/v1' });
+
+  const studentNamesList = studentNames.join(', ');
+
+  const response = await deepseek.chat.completions.create({
+    model: 'deepseek-chat',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+          },
+          {
+            type: 'text',
+            text: `Analyze this sociogram visual graph from PULSO.cl education platform.
+
+STUDENTS in this course: ${studentNamesList}
+
+Extract ALL directed relationship edges shown in the graph. For each edge:
+1. Identify the SOURCE student (who made the choice) - the arrow origin
+2. Identify the TARGET student (who was chosen) - the arrow destination
+3. Determine the RELATIONSHIP TYPE based on line style/color:
+   - SOLID GREEN lines = trabajo_positivo
+   - DASHED GREEN lines = convivencia_positiva
+   - SOLID RED lines = trabajo_negativo
+   - DASHED RED lines = convivencia_negativa
+4. Estimate STRENGTH (1-3) based on line thickness: 1=thin, 2=medium, 3=thick
+
+Return ONLY a JSON array with this exact structure (no other text):
+[
+  {"from_id": "student-name-1", "to_id": "student-name-2", "tipo": "trabajo_positivo", "fuerza": 2},
+  ...
+]
+
+Rules:
+- Use EXACT student names as provided (case-sensitive match)
+- If you cannot identify the exact student, use the closest name match
+- Extract ALL visible edges - do not skip any
+- Arrow direction indicates: from = nominator, to = nominated`,
+          },
+        ],
+      },
+    ],
+    max_tokens: 2048,
+  });
+
+  const content = response.choices[0]?.message?.content || '';
+
+  // Parse JSON response
+  try {
+    let jsonStr = content;
+    if (content.includes('```')) {
+      const match = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+      if (match) jsonStr = match[1];
+    }
+
+    const relations = JSON.parse(jsonStr) as SociogramRelation[];
+
+    return relations
+      .filter((r) => r.from_id && r.to_id && r.tipo)
+      .map((r) => ({
+        ...r,
+        fuerza: Math.min(3, Math.max(1, r.fuerza || 1)),
+      }));
+  } catch (error) {
+    console.error('Failed to parse VL2 relations response:', error);
+    return [];
+  }
+}
+
+/**
  * Extract visual relationships from group PDF using DeepSeek VL2 vision model
- * TODO: Implement in Task 3 - convert PDF pages to images and analyze with VL2
  *
  * @param pdfBuffer Raw PDF file buffer
  * @param studentNames Array of student names to look for in the sociogram
@@ -1055,11 +1185,56 @@ export async function extractRelationsFromPDF(
   studentNames: string[],
   apiKey: string
 ): Promise<SociogramRelation[]> {
-  // TODO: Implement vision-based relation extraction
-  // This requires:
-  // 1. Convert PDF pages to images (using pdfjs-dist)
-  // 2. Send images to DeepSeek VL2 for visual graph analysis
-  // 3. Parse the response to extract relationships between students
-  console.log('[extractRelationsFromPDF] TODO - Not yet implemented, returning empty relations');
-  return [];
+  if (!apiKey) {
+    console.warn('DEEPSEEK_API_KEY not set, skipping relation extraction');
+    return [];
+  }
+
+  if (!pdfBuffer || pdfBuffer.length === 0) {
+    console.warn('Empty PDF buffer, skipping relation extraction');
+    return [];
+  }
+
+  try {
+    const pdfjs = await getPdfjs();
+    const uint8Array = new Uint8Array(pdfBuffer);
+    const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
+
+    console.log(`PDF has ${pdf.numPages} pages`);
+
+    const allRelations: SociogramRelation[] = [];
+
+    // Process pages 2-3 (sociogram visual graphs)
+    for (const pageNum of [2, 3]) {
+      if (pageNum > pdf.numPages) {
+        console.log(`Skipping page ${pageNum} - PDF only has ${pdf.numPages} pages`);
+        continue;
+      }
+
+      try {
+        console.log(`Processing page ${pageNum} for visual graph...`);
+
+        // Render page to image
+        const imageBase64 = await renderPdfPageToImage(pdf, pageNum, 2.0);
+        if (!imageBase64) {
+          console.warn(`Failed to render page ${pageNum} to image`);
+          continue;
+        }
+
+        // Extract relations using VL2
+        const pageRelations = await extractRelationsWithVL2(imageBase64, studentNames, apiKey);
+        console.log(`Extracted ${pageRelations.length} relations from page ${pageNum}`);
+        allRelations.push(...pageRelations);
+
+      } catch (error) {
+        console.error(`Error processing page ${pageNum}:`, error);
+      }
+    }
+
+    return allRelations;
+
+  } catch (error) {
+    console.error('Failed to process PDF:', error);
+    return [];
+  }
 }
