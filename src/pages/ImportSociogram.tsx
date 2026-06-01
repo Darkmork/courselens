@@ -29,7 +29,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   courseId = DEFAULT_COURSE_ID,
   onBack
 }) => {
-  const [groupMarkdown, setGroupMarkdown] = useState<File | null>(null);
+  const [groupPdf, setGroupPdf] = useState<File | null>(null);
   const [individualMarkdown, setIndividualMarkdown] = useState<File | null>(null);
   const [year, setYear] = useState<string>('2025');
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -38,16 +38,17 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   const [courseVision, setCourseVision] = useState<CourseVision | null>(null);
 
   // File input refs for resetting
-  const groupInputRef = useRef<HTMLInputElement>(null);
+  const groupPdfInputRef = useRef<HTMLInputElement>(null);
   const individualInputRef = useRef<HTMLInputElement>(null);
 
-  const handleGroupMarkdownChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGroupPdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.includes('text') && !file.name.endsWith('.md')) {
+    // Accept PDF files only
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
       setImportStatus('error');
-      setImportMessage('Por favor selecciona un archivo Markdown (.md) válido');
+      setImportMessage('El reporte grupal debe ser un archivo PDF de PULSO.cl');
       return;
     }
 
@@ -57,9 +58,9 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
       return;
     }
 
-    setGroupMarkdown(file);
+    setGroupPdf(file);
     setImportStatus('idle');
-    setImportMessage('✓ Reporte grupal cargado');
+    setImportMessage('✓ Reporte grupal (PDF) cargado');
   };
 
   const handleIndividualMarkdownChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +88,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!groupMarkdown || !individualMarkdown || !year || !courseId) {
+    if (!groupPdf || !individualMarkdown || !year || !courseId) {
       setImportStatus('error');
       setImportMessage('Se requieren ambos archivos: grupal e individual');
       return;
@@ -98,8 +99,8 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
 
     try {
       const formData = new FormData();
-      if (groupMarkdown) {
-        formData.append('groupMarkdown', groupMarkdown);
+      if (groupPdf) {
+        formData.append('groupPdf', groupPdf);
       }
       if (individualMarkdown) {
         formData.append('individualMarkdown', individualMarkdown);
@@ -130,7 +131,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         }
 
         // Reset form
-        setGroupMarkdown(null);
+        setGroupPdf(null);
         setIndividualMarkdown(null);
       }
     } catch (error) {
@@ -141,7 +142,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
   };
 
   const handleReset = () => {
-    setGroupMarkdown(null);
+    setGroupPdf(null);
     setIndividualMarkdown(null);
     setImportStatus('idle');
     setImportMessage('');
@@ -149,7 +150,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
     setCourseVision(null);
 
     // Clear file inputs
-    if (groupInputRef.current) groupInputRef.current.value = '';
+    if (groupPdfInputRef.current) groupPdfInputRef.current.value = '';
     if (individualInputRef.current) individualInputRef.current.value = '';
   };
 
@@ -194,25 +195,24 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           {/* Group Markdown File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-200 mb-2">
-              Reporte Grupal (Markdown) - Requerido
+              Reporte Grupal (PDF) - Requerido
             </label>
             <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
-                ref={groupInputRef}
+                ref={groupPdfInputRef}
                 type="file"
-                accept=".md,text/markdown,text/plain"
-                onChange={handleGroupMarkdownChange}
+                onChange={handleGroupPdfChange}
                 className="hidden"
-                id="groupMarkdown"
+                id="groupPdf"
                 disabled={importStatus === 'loading'}
               />
-              <label htmlFor="groupMarkdown" className="cursor-pointer block">
+              <label htmlFor="groupPdf" className="cursor-pointer block">
                 <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
                 <p className="text-sm text-gray-300">
-                  {groupMarkdown ? (
-                    <span className="text-green-400 font-medium">{groupMarkdown.name}</span>
+                  {groupPdf ? (
+                    <span className="text-green-400 font-medium">{groupPdf.name}</span>
                   ) : (
-                    'Haz clic para seleccionar el reporte grupal'
+                    'Haz clic para seleccionar el reporte grupal (PDF)'
                   )}
                 </p>
               </label>
@@ -337,7 +337,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={importStatus === 'loading' || !groupMarkdown || !individualMarkdown}
+              disabled={importStatus === 'loading' || !groupPdf || !individualMarkdown}
               aria-label="Importar sociograma y generar análisis"
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             >
@@ -365,7 +365,7 @@ export const ImportSociogram: React.FC<ImportSociogramProps> = ({
         <div className="mt-8 bg-blue-900/20 border border-blue-700 rounded-lg p-4 text-sm text-blue-200">
           <p className="font-medium mb-2">Archivos requeridos (ambos):</p>
           <ul className="list-disc list-inside space-y-2 text-blue-300/90">
-            <li><strong>Reporte Grupal (Markdown):</strong> Archivo .md generado por MarkItDown del PDF grupal de PULSO.cl</li>
+            <li><strong>Reporte Grupal (PDF):</strong> Archivo PDF grupal de PULSO.cl (se procesará con visión AI para extraer relaciones)</li>
             <li><strong>Reporte Individual (Markdown):</strong> Archivo .md generado por MarkItDown del PDF individual de PULSO.cl</li>
           </ul>
           <p className="mt-3 text-blue-300/80 text-xs">✨ <strong>Qué genera el análisis:</strong></p>
