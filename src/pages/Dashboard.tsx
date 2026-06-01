@@ -16,15 +16,62 @@ import {
   ResponsiveContainer,
   Tooltip
 } from 'recharts';
-import { collection, query, onSnapshot, limit, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, limit, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { Student, RiskStatus } from '../types';
+import { Student, RiskStatus, SociogramData } from '../types';
 import { motion } from 'motion/react';
 
 const Dashboard: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [formResponses, setFormResponses] = useState<any[]>([]);
+  const [sociogramData, setSociogramData] = useState<SociogramData | null>(null);
+  const currentYear = new Date().getFullYear();
+  const courseId = 'course-1';
+
+  // Load form responses
+  useEffect(() => {
+    const loadFormResponses = async () => {
+      try {
+        // Query form_responses collection for this course
+        const responsesRef = collection(db, 'form_responses');
+        const q = query(responsesRef);
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const responses = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter((doc: any) => doc.courseId === courseId);
+          setFormResponses(responses);
+        });
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Error loading form responses:', error);
+        setFormResponses([]);
+      }
+    };
+    loadFormResponses();
+  }, [courseId]);
+
+  // Load sociogram data for current year
+  useEffect(() => {
+    const loadSociogramData = async () => {
+      try {
+        const sociogramRef = doc(db, `sociogram_${currentYear}`, courseId);
+        const unsubscribe = onSnapshot(sociogramRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setSociogramData(docSnap.data() as SociogramData);
+          } else {
+            setSociogramData(null);
+          }
+        });
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Error loading sociogram data:', error);
+        setSociogramData(null);
+      }
+    };
+    loadSociogramData();
+  }, [currentYear, courseId]);
 
   useEffect(() => {
     const q = query(collection(db, 'students'));
@@ -125,7 +172,25 @@ const Dashboard: React.FC = () => {
 
   const calculateGrowthScore = () => {
     if (students.length === 0) return 0;
-    return Math.round((7.5 + Math.random() * 1) * 10) / 10;
+
+    // Base score starts at 5
+    let score = 5;
+
+    // Factor 1: Form response engagement (0-3 points)
+    // More form responses indicates better engagement and tracking
+    const formResponseRatio = Math.min(formResponses.length / students.length, 1);
+    score += formResponseRatio * 3;
+
+    // Factor 2: Sociogram cohesion if available (0-2 points)
+    if (sociogramData?.metricas?.cohesion) {
+      score += (sociogramData.metricas.cohesion / 10) * 2;
+    }
+
+    // Factor 3: Positive risk status distribution (0-2.5 points)
+    const greenRatio = students.filter(s => s.riskStatus === RiskStatus.GREEN).length / students.length;
+    score += greenRatio * 2.5;
+
+    return Math.round(Math.min(score, 10) * 10) / 10;
   };
 
   const healthScores = [
