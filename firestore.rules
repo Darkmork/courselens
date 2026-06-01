@@ -30,7 +30,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isValidStudent(request.resource.data);
       allow update: if isSignedIn() && isValidStudent(request.resource.data);
-      allow delete: if isSignedIn();
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.teacherId;
 
       // Form responses sub-collection
       match /formResponses/{responseId} {
