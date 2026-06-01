@@ -1,3 +1,29 @@
+import { Timestamp } from 'firebase/firestore';
+
+export interface StudentDistribution {
+  category: string;
+  count: number;
+  percentage: number;
+}
+
+export interface RiskAssessment {
+  highRisk: number;
+  mediumRisk: number;
+  lowRisk: number;
+  overallScore: number;
+}
+
+export interface SociogramAnalysis {
+  courseId: string;
+  year: number;
+  generatedAt: Timestamp;
+  courseVision: string;
+  summary: string;
+  keyInsights: string[];
+  studentDistribution: StudentDistribution[];
+  riskAssessment: RiskAssessment;
+}
+
 export type { FormResponse, FormType, PersonalityTrait, PersonalData, AcademicData, SocialData, PersonalTraitsData, EmotionalData, FamilyData, SpiritualData, FutureData, FormImportResult } from './FormResponse';
 
 export enum RiskStatus {
