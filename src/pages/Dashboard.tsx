@@ -19,6 +19,7 @@ import {
 import { collection, query, where, onSnapshot, limit, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Student, RiskStatus, SociogramData } from '../types';
+import { DEFAULT_COURSE_ID } from '../lib/constants';
 import { motion } from 'motion/react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -29,7 +30,7 @@ const Dashboard: React.FC = () => {
   const [formResponses, setFormResponses] = useState<any[]>([]);
   const [sociogramData, setSociogramData] = useState<SociogramData | null>(null);
   const currentYear = new Date().getFullYear();
-  const courseId = 'course-1';
+  const courseId = DEFAULT_COURSE_ID;
 
   // Load form responses
   useEffect(() => {

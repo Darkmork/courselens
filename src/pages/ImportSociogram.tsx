@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
+import { DEFAULT_COURSE_ID } from '../lib/constants';
 
 interface ImportSummary {
   studentCount: number;
@@ -25,7 +26,7 @@ interface ImportSociogramProps {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export const ImportSociogram: React.FC<ImportSociogramProps> = ({
-  courseId = 'course-1',
+  courseId = DEFAULT_COURSE_ID,
   onBack
 }) => {
   const [groupMarkdown, setGroupMarkdown] = useState<File | null>(null);

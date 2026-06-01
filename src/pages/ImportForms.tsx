@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader, Zap } from 'lucide-react';
 import type { Page } from '../App';
+import { DEFAULT_COURSE_ID } from '../lib/constants';
 
 interface FileUpload {
   file: File | null;
@@ -36,7 +37,7 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
     { file: null, formType: 'mediados_III_medio' },
     { file: null, formType: 'inicio_IV_medio' },
   ]);
-  const [courseId, setCourseId] = useState('course-1');
+  const [courseId, setCourseId] = useState(DEFAULT_COURSE_ID);
   const [isImporting, setIsImporting] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +121,7 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
               type="text"
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
-              placeholder="course-1"
+              placeholder={DEFAULT_COURSE_ID}
               className="w-full bg-neutral-900 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>

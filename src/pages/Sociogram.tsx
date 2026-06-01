@@ -5,7 +5,7 @@ import { SociogramData } from '../types';
 import { Share2, Info, Upload, AlertCircle, Loader, Sparkles } from 'lucide-react';
 import type { Page } from '../App';
 import { YearSelector } from '../components/YearSelector';
-import { DEFAULT_YEARS } from '../lib/constants';
+import { DEFAULT_YEARS, DEFAULT_COURSE_ID } from '../lib/constants';
 
 interface SociogramProps {
   onNavigate?: (page: Page) => void;
@@ -20,7 +20,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
   const [sortBy, setSortBy] = useState<'nombre' | 'bienestar' | 'menciones_positivas' | 'menciones_negativas'>('nombre');
   const [isRegenerating, setIsRegenerating] = useState(false);
 
-  const courseId = 'course-1';
+  const courseId = DEFAULT_COURSE_ID;
 
   // Load sociogram data from Firestore
   useEffect(() => {
