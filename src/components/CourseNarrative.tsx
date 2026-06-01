@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, TrendingUp, BookOpen, BarChart3, Award, AlertCircle, Zap } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 interface StudentData {
   id: string;
@@ -118,7 +119,11 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
                 disabled={generatingNarrative}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-neutral-600 disabled:to-neutral-600 text-white font-bold rounded-lg transition-all shadow-lg flex items-center gap-2"
               >
-                {generatingNarrative ? '⏳ Generando narrativa...' : '✨ Generar Narrativa IA'}
+                {generatingNarrative ? (
+                  <LoadingSpinner size="sm" label="Generando..." />
+                ) : (
+                  '✨ Generar Narrativa IA'
+                )}
               </button>
             )}
             {onExportBook && (

@@ -20,6 +20,7 @@ import { collection, query, where, onSnapshot, limit, orderBy, doc, getDoc } fro
 import { db, auth } from '../lib/firebase';
 import { Student, RiskStatus, SociogramData } from '../types';
 import { motion } from 'motion/react';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const Dashboard: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -250,14 +251,18 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={generateAIReport}
             disabled={isGeneratingReport}
             className="group relative px-6 py-3 bg-[#111111]/80 backdrop-blur-md/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-300 font-semibold text-white overflow-hidden disabled:opacity-50"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-blue-500/0 -translate-x-[100%] group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
             <div className="relative z-10 flex items-center gap-2">
-              <Sparkles className={`w-4 h-4 ${isGeneratingReport ? 'animate-spin' : 'text-purple-400'}`} />
+              {isGeneratingReport ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                <Sparkles className="w-4 h-4 text-purple-400" />
+              )}
               <span className="font-mono text-sm">{isGeneratingReport ? 'COMPILANDO...' : 'REPORTE IA'}</span>
             </div>
           </button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, Heart, Brain, Zap, BookOpen, Users, Lightbulb, Calendar } from 'lucide-react';
 import type { FormResponse } from '../types/FormResponse';
 import { MOMENT_LABELS, MOMENT_DATES } from '../lib/constants';
+import LoadingSpinner from './LoadingSpinner';
 
 interface StudentJourneyProps {
   studentId: string;
@@ -133,7 +134,11 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
                 disabled={generatingNarrative}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600 text-white text-sm font-bold rounded-lg transition-all flex items-center gap-2"
               >
-                {generatingNarrative ? '⏳ Generando...' : '✨ Generar Narrativa'}
+                {generatingNarrative ? (
+                  <LoadingSpinner size="sm" label="Generando..." />
+                ) : (
+                  '✨ Generar Narrativa'
+                )}
               </button>
             )}
             {onExport && (

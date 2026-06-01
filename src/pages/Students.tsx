@@ -15,6 +15,7 @@ import { Student, RiskStatus } from '../types';
 import AddStudentModal from '../components/AddStudentModal';
 import ImportStudentsModal from '../components/ImportStudentsModal';
 import StudentProfileModal from '../components/StudentProfileModal';
+import LoadingSpinner from '../components/LoadingSpinner';
 import type { Page } from '../App';
 
 interface StudentsProps {
@@ -161,7 +162,11 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
                 disabled={isAnalyzing === student.id}
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl font-bold text-xs hover:bg-blue-500/20 transition-colors disabled:opacity-50 border border-blue-500/20"
               >
-                {isAnalyzing === student.id ? '...' : <BrainCircuit className="w-4 h-4" />}
+                {isAnalyzing === student.id ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <BrainCircuit className="w-4 h-4" />
+                )}
                 {isAnalyzing === student.id ? 'Analizando' : 'Evaluar IA'}
               </button>
               <button
