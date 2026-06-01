@@ -144,26 +144,6 @@ function mapCSVRowToResponses(row: Record<string, string>, formType: FormType): 
       carrera_opcion: row['¿Sigues pensando en la misma carrera?'],
       planes: row['¿Tienes claro tu plan a futuro?'],
     };
-  } else if (formType === 'fin_I_semestre') {
-    responses.academic = {
-      desempeño: row['¿Cómo evalúas tu desempeño académico este semestre?'],
-      asignaturas_fuertes: row['¿En qué asignaturas te sentiste más cómodo/a y por qué?']?.split(',').map(s => s.trim()),
-      estrategias_estudio: row['¿Qué estrategias de estudio te funcionaron mejor?'],
-    };
-
-    responses.social = {
-      relacion_compañeros: row['¿Cómo describirías tu relación con tus compañeros de curso?'],
-      participacion_actividades: row['¿Participaste en actividades de curso, comités, talleres u otras?']?.split(',').map(a => a.trim()),
-      pertenencia_grupo: row['¿Sientes que formas parte de un grupo o comunidad dentro del colegio?']?.toLowerCase() === 'sí',
-      conflictos: row['¿Has tenido algún conflicto este semestre?'],
-    };
-
-    responses.emotional = {
-      bienestar: row['¿Cómo te sentiste emocionalmente durante este semestre?'],
-      estres: row['¿Qué situaciones te generaron más estrés o preocupación?'],
-      orgullo: row['¿Qué cosas te hicieron sentir orgulloso/a de ti mismo?'],
-      equilibrio: row['¿Lograste un equilibrio entre el estudio, tus intereses personales y el descanso?']?.toLowerCase() === 'sí',
-    };
   } else if (formType === 'inicio_IV_medio') {
     responses.academic = {
       nem_promedio: row['¿Cuál es tu promedio general acumulado (NEM) hasta la fecha?'] ? parseFloat(row['¿Cuál es tu promedio general acumulado (NEM) hasta la fecha?']) : undefined,

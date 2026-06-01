@@ -9,7 +9,7 @@
  * @see docs/superpowers/specs/2026-05-17-google-forms-timeline-design.md
  */
 
-export type FormType = 'inicio_III_medio' | 'mediados_III_medio' | 'fin_I_semestre' | 'inicio_IV_medio';
+export type FormType = 'inicio_III_medio' | 'mediados_III_medio' | 'inicio_IV_medio';
 
 /**
  * Personality traits from "inicio_III_medio" Google Form yes/no questions.
