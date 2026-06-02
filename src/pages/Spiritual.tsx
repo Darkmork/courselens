@@ -11,7 +11,7 @@ export default function Spiritual() {
   const courseId = DEFAULT_COURSE_ID;
 
   useEffect(() => {
-    const q = query(collection(db, 'sessions')); 
+    const q = query(collection(db, 'sessions'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let data: OrientationSession[] = [];
       snapshot.forEach(doc => {
@@ -47,59 +47,56 @@ export default function Spiritual() {
     <div className="p-4 md:p-8 space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-indigo-500" />
-            Orientación y Valores
+            Orientacion y Valores
           </h2>
-          <p className="text-neutral-400">Registro de reflexiones, espiritualidad y temas valóricos trabajados.</p>
+          <p className="text-gray-500">Registro de reflexiones, espiritualidad y temas valoricos trabajados.</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-600 transition-all flex items-center gap-2"
+          className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-bold shadow-sm hover:bg-indigo-600 transition-all flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Nueva Sesión
+          Nueva Sesion
         </button>
       </header>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
         {sessions.length === 0 && (
-          <div className="col-span-full py-20 text-center bg-[#111111]/50 rounded-3xl border-2 border-dashed border-white/10">
-            <BookOpen className="w-12 h-12 text-neutral-600 mx-auto mb-4 drop-shadow-[0_0_10px_rgba(99,102,241,0.3)]" />
-            <h3 className="text-lg font-bold text-neutral-400 uppercase tracking-widest font-mono">Sin Registros</h3>
-            <p className="text-neutral-500">Inicia documentando la primera sesión de orientación del curso.</p>
+          <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200 shadow-sm">
+            <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-400 uppercase tracking-widest font-mono">Sin Registros</h3>
+            <p className="text-gray-500">Inicia documentando la primera sesion de orientacion del curso.</p>
           </div>
         )}
 
         {sessions.map(session => (
-          <div key={session.id} className="bg-[#111111]/80 backdrop-blur-md p-8 rounded-[2rem] border border-white/10 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-white/20 transition-all">
-            {/* Decorative background element */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 blur-3xl rounded-full -z-0 opacity-50 group-hover:scale-110 transition-transform"></div>
-            
+          <div key={session.id} className="bg-white p-8 rounded-[2rem] border border-gray-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
             <div className="relative z-10 flex flex-col h-full">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <span className="inline-block px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-xs font-bold mb-3 tracking-widest uppercase font-mono">
+                  <span className="inline-block px-3 py-1 bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-lg text-xs font-bold mb-3 tracking-widest uppercase font-mono">
                     {session.date}
                   </span>
-                  <h3 className="font-bold text-white text-2xl tracking-tight leading-tight max-w-[90%] font-display group-hover:text-indigo-400 transition-colors">
+                  <h3 className="font-bold text-gray-900 text-2xl tracking-tight leading-tight max-w-[90%] font-display group-hover:text-indigo-600 transition-colors">
                     {session.topic}
                   </h3>
                 </div>
               </div>
-              
+
               <div className="relative flex-1">
-                <Quote className="absolute -left-2 -top-2 w-8 h-8 text-neutral-800 -z-10 transform -scale-x-100" />
-                <p className="text-neutral-300 leading-relaxed text-sm pt-2">
+                <Quote className="absolute -left-2 -top-2 w-8 h-8 text-gray-200 -z-10 transform -scale-x-100" />
+                <p className="text-gray-700 leading-relaxed text-sm pt-2">
                   {session.observations}
                 </p>
               </div>
 
-              <div className="mt-8 pt-4 border-t border-white/5 flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#1A1A1A] border-2 border-[#050505] rounded-full flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
+              <div className="mt-8 pt-4 border-t border-gray-100 flex items-center gap-3">
+                <div className="w-8 h-8 bg-indigo-50 border-2 border-indigo-200 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-indigo-500" />
                 </div>
-                <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest font-mono">Sesión de Reflexión</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest font-mono">Sesion de Reflexion</span>
               </div>
             </div>
           </div>
@@ -107,52 +104,52 @@ export default function Spiritual() {
       </div>
 
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-md rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-2xl font-bold text-white mb-6 font-display">Nueva Sesión</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+          <div className="bg-white border border-gray-200 w-full max-w-md rounded-3xl p-8 shadow-xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6 font-display">Nueva Sesion</h3>
             <form onSubmit={handleAddSession} className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-1 font-mono uppercase tracking-wider">Tema / Valor</label>
-                <input 
+                <label className="block text-sm font-bold text-gray-600 mb-1 font-mono uppercase tracking-wider">Tema / Valor</label>
+                <input
                   name="topic"
-                  type="text" 
+                  type="text"
                   required
-                  placeholder="Ej. Compañerismo y Empatía"
-                  className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:bg-[#1a1a1a] focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white placeholder:text-neutral-600"
+                  placeholder="Ej. Companerismo y Empatia"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 placeholder:text-gray-400"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-1 font-mono uppercase tracking-wider">Fecha</label>
-                <input 
+                <label className="block text-sm font-bold text-gray-600 mb-1 font-mono uppercase tracking-wider">Fecha</label>
+                <input
                   name="date"
-                  type="date" 
+                  type="date"
                   required
-                  className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:bg-[#1a1a1a] focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-1 font-mono uppercase tracking-wider">Observaciones / Conclusión</label>
-                <textarea 
+                <label className="block text-sm font-bold text-gray-600 mb-1 font-mono uppercase tracking-wider">Observaciones / Conclusion</label>
+                <textarea
                   name="observations"
                   required
                   placeholder="Principales ideas que surgieron del curso..."
-                  className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:bg-[#1a1a1a] focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none h-32 text-white placeholder:text-neutral-600"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none h-32 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
-              
+
               <div className="flex gap-4 pt-4">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-3 px-6 bg-white/5 text-neutral-300 rounded-2xl font-bold hover:bg-white/10 transition-all border border-white/5 font-mono uppercase tracking-widest text-sm"
+                  className="flex-1 py-3 px-6 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all border border-gray-200 font-mono uppercase tracking-widest text-sm"
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 py-3 px-6 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] font-mono uppercase tracking-widest text-sm"
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-6 bg-indigo-500 text-white rounded-2xl font-bold hover:bg-indigo-600 transition-all font-mono uppercase tracking-widest text-sm"
                 >
                   Registrar
                 </button>

@@ -15,7 +15,7 @@ interface ImportProps {
 const FORM_CONFIG = {
   inicio_III_medio: {
     label: 'Inicio III Medio',
-    description: 'Diagnóstico inicial (marzo)',
+    description: 'Diagnostico inicial (marzo)',
     icon: '📋',
   },
   mediados_III_medio: {
@@ -25,7 +25,7 @@ const FORM_CONFIG = {
   },
   inicio_IV_medio: {
     label: 'Inicio IV Medio',
-    description: 'Reflexión final (septiembre)',
+    description: 'Reflexion final (septiembre)',
     icon: '🎯',
   },
 };
@@ -85,7 +85,7 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
         setResults(data);
         setFiles(f => f.map(item => ({ ...item, file: null })));
       } else {
-        setError(data.error || 'Error en la importación');
+        setError(data.error || 'Error en la importacion');
       }
     } catch (err: any) {
       setError(err.message);
@@ -98,31 +98,31 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
   const anyFileSelected = files.some(f => f.file);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a1a] p-8">
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <Zap className="w-8 h-8 text-blue-500" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold text-gray-900">
               Importar Vida del Curso
             </h1>
           </div>
-          <p className="text-neutral-300 text-lg">
-            Captura los 3 momentos clave de tu curso: inicio, checkpoint y reflexión final
+          <p className="text-gray-600 text-lg">
+            Captura los 3 momentos clave de tu curso: inicio, checkpoint y reflexion final
           </p>
         </div>
 
         <div className="space-y-8">
           {/* Course Selection */}
-          <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6">
-            <label className="block text-sm font-bold text-white mb-3">Curso</label>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <label className="block text-sm font-bold text-gray-700 mb-3">Curso</label>
             <input
               type="text"
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
               placeholder={DEFAULT_COURSE_ID}
-              className="w-full bg-neutral-900 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -135,21 +135,21 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
               return (
                 <div
                   key={item.formType}
-                  className={`bg-[#1a1a1a] border rounded-xl p-6 transition-all ${
+                  className={`bg-white border rounded-xl p-6 transition-all shadow-sm ${
                     isSelected
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
-                      : 'border-white/10 hover:border-white/20'
+                      ? 'border-blue-500 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <div className="text-3xl mb-3">{config.icon}</div>
-                  <h3 className="font-bold text-white mb-1">{config.label}</h3>
-                  <p className="text-xs text-neutral-400 mb-4">{config.description}</p>
+                  <h3 className="font-bold text-gray-900 mb-1">{config.label}</h3>
+                  <p className="text-xs text-gray-500 mb-4">{config.description}</p>
 
                   <div
                     className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-blue-500/50 bg-blue-500/10'
-                        : 'border-white/20 hover:border-blue-500/50'
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-gray-300 hover:border-blue-400'
                     }`}
                     onClick={() => fileInputRefs.current[item.formType]?.click()}
                     onDrop={(e) => {
@@ -173,16 +173,16 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
                     />
                     {isSelected ? (
                       <div>
-                        <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                        <p className="text-xs text-white font-bold truncate">{item.file!.name}</p>
-                        <p className="text-xs text-neutral-400 mt-1">
+                        <CheckCircle className="w-6 h-6 text-green-500 mx-auto mb-2" />
+                        <p className="text-xs text-gray-900 font-bold truncate">{item.file!.name}</p>
+                        <p className="text-xs text-gray-500 mt-1">
                           {(item.file!.size / 1024).toFixed(0)} KB
                         </p>
                       </div>
                     ) : (
                       <div>
-                        <Upload className="w-5 h-5 text-neutral-500 mx-auto mb-2" />
-                        <p className="text-xs text-neutral-300">Arrastra CSV</p>
+                        <Upload className="w-5 h-5 text-gray-400 mx-auto mb-2" />
+                        <p className="text-xs text-gray-600">Arrastra CSV</p>
                       </div>
                     )}
                   </div>
@@ -193,22 +193,22 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
 
           {/* Error */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-red-300">{error}</p>
+                <p className="font-bold text-red-700">{error}</p>
               </div>
             </div>
           )}
 
           {/* Results */}
           {results && (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6 space-y-4">
               <div className="flex gap-3 items-start">
-                <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-green-300 text-lg">Importación completada</p>
-                  <p className="text-sm text-neutral-200 mt-1">
+                  <p className="font-bold text-green-800 text-lg">Importacion completada</p>
+                  <p className="text-sm text-gray-700 mt-1">
                     Total: {results.summary.totalImported} estudiantes importados
                   </p>
                 </div>
@@ -216,22 +216,22 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
 
               <div className="grid md:grid-cols-3 gap-3 mt-4">
                 {results.results.map((res: any) => (
-                  <div key={res.formType} className="bg-black/20 rounded p-3 border border-green-500/20">
-                    <p className="text-xs font-bold text-green-300">{FORM_CONFIG[res.formType as keyof typeof FORM_CONFIG].label}</p>
-                    <p className="text-sm text-white font-bold mt-1">{res.imported}/{res.totalRows}</p>
+                  <div key={res.formType} className="bg-white rounded p-3 border border-green-200">
+                    <p className="text-xs font-bold text-green-700">{FORM_CONFIG[res.formType as keyof typeof FORM_CONFIG].label}</p>
+                    <p className="text-sm text-gray-900 font-bold mt-1">{res.imported}/{res.totalRows}</p>
                     {res.errors.length > 0 && (
-                      <p className="text-xs text-yellow-300 mt-1">{res.errors.length} errores</p>
+                      <p className="text-xs text-amber-600 mt-1">{res.errors.length} errores</p>
                     )}
                   </div>
                 ))}
               </div>
 
               {results.results.some((r: any) => r.errors.length > 0) && (
-                <div className="bg-black/30 rounded p-3 max-h-48 overflow-y-auto border border-yellow-500/20">
-                  <p className="text-xs font-bold text-yellow-300 mb-2">Errores encontrados:</p>
-                  <ul className="text-xs text-neutral-300 space-y-1">
+                <div className="bg-white rounded p-3 max-h-48 overflow-y-auto border border-amber-200">
+                  <p className="text-xs font-bold text-amber-700 mb-2">Errores encontrados:</p>
+                  <ul className="text-xs text-gray-700 space-y-1">
                     {results.results.flatMap((r: any) => r.errors).slice(0, 10).map((err: any, i: number) => (
-                      <li key={i} className="text-yellow-200">
+                      <li key={i} className="text-amber-700">
                         {err.email} - {err.reason}
                       </li>
                     ))}
@@ -245,7 +245,7 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
           <button
             onClick={handleImport}
             disabled={!anyFileSelected || isImporting}
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-neutral-600 disabled:to-neutral-600 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-all flex items-center justify-center gap-3 text-lg"
+            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-all flex items-center justify-center gap-3 text-lg"
           >
             {isImporting ? (
               <>
@@ -265,7 +265,7 @@ export const ImportForms: React.FC<ImportProps> = ({ onNavigate }) => {
         {onNavigate && (
           <button
             onClick={() => onNavigate('students')}
-            className="mt-8 text-blue-400 hover:text-blue-300 text-sm font-mono transition-colors"
+            className="mt-8 text-blue-600 hover:text-blue-700 text-sm font-mono transition-colors"
           >
             ← Volver a Estudiantes
           </button>
