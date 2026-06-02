@@ -136,15 +136,15 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
   const getRoleColor = (rol: string) => {
     switch (rol?.toLowerCase()) {
       case 'líder positivo':
-        return 'bg-green-900/30 border-green-600 text-green-300';
+        return 'bg-green-100 border-green-300 text-green-700';
       case 'saludable':
       case 'amistoso(a)':
-        return 'bg-purple-900/30 border-purple-600 text-purple-300';
+        return 'bg-purple-100 border-purple-300 text-purple-700';
       case 'desafío':
       case 'dificultad para trabajar en grupo':
-        return 'bg-red-900/30 border-red-600 text-red-300';
+        return 'bg-red-100 border-red-300 text-red-700';
       default:
-        return 'bg-gray-900/30 border-gray-600 text-gray-300';
+        return 'bg-gray-100 border-gray-300 text-gray-600';
     }
   };
 
@@ -157,16 +157,16 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
   const sortedStudents = getSortedStudents();
 
   return (
-    <div className="h-[calc(100vh-64px)] md:h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
+    <div className="h-[calc(100vh-64px)] md:h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <header className="p-4 md:p-8 bg-[#111111]/80 backdrop-blur-md border-b border-white/10 shrink-0">
+      <header className="p-4 md:p-8 bg-white backdrop-blur-md border-b border-gray-200 shadow-sm shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
               <Share2 className="w-8 h-8 text-blue-600" />
               Inteligencia Relacional
             </h2>
-            <p className="text-sm text-neutral-400">Datos de dinámicas interpersonales y bienestar del curso</p>
+            <p className="text-sm text-gray-500">Datos de dinámicas interpersonales y bienestar del curso</p>
           </div>
           <div className="flex gap-2">
             {onNavigate && (
@@ -193,7 +193,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
               </button>
             )}
             <button
-              className="p-3 bg-[#111] text-neutral-400 rounded-xl hover:bg-[#1a1a1a] transition-all border border-white/10"
+              className="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-all border border-gray-200"
               title="Información"
             >
               <Info className="w-5 h-5" />
@@ -211,20 +211,20 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
       <div className="flex-1 overflow-auto px-4 md:px-8 py-6">
         {isLoadingSociogram && (
           <div className="flex items-center justify-center py-20">
-            <div className="text-center p-8 border border-blue-500/20 rounded-lg bg-blue-900/10">
-              <Loader className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Cargando Sociograma</h3>
-              <p className="text-neutral-500">Obteniendo datos del año {selectedYear}...</p>
+            <div className="text-center p-8 border border-blue-200 rounded-lg bg-white shadow-sm">
+              <Loader className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Cargando Sociograma</h3>
+              <p className="text-gray-500">Obteniendo datos del año {selectedYear}...</p>
             </div>
           </div>
         )}
 
         {hasNoData && !isLoadingSociogram && (
           <div className="flex items-center justify-center py-20">
-            <div className="text-center p-8 border border-amber-500/20 rounded-lg bg-amber-900/10">
-              <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Sin Datos de Sociograma</h3>
-              <p className="text-neutral-500 mb-4">No hay datos para {selectedYear}</p>
+            <div className="text-center p-8 border border-amber-200 rounded-lg bg-white shadow-sm">
+              <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Sin Datos de Sociograma</h3>
+              <p className="text-gray-500 mb-4">No hay datos para {selectedYear}</p>
               <button
                 onClick={() => onNavigate?.('import-sociogram' as Page)}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -239,17 +239,17 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
           <div className="space-y-6 max-w-6xl mx-auto pb-10">
             {/* Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <p className="text-gray-400 text-sm font-mono">Estudiantes</p>
-                <p className="text-3xl font-bold text-white mt-2">{sociogramData.estudiantes.length}</p>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <p className="text-gray-500 text-sm font-mono">Estudiantes</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{sociogramData.estudiantes.length}</p>
               </div>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <p className="text-gray-400 text-sm font-mono">Cohesión</p>
-                <p className="text-3xl font-bold text-blue-400 mt-2">{sociogramData.metricas.cohesion.toFixed(1)}/10</p>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <p className="text-gray-500 text-sm font-mono">Cohesión</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{sociogramData.metricas.cohesion.toFixed(1)}/10</p>
               </div>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <p className="text-gray-400 text-sm font-mono">Fragmentación</p>
-                <p className="text-3xl font-bold text-amber-400 mt-2">{sociogramData.metricas.fragmentacion.toFixed(1)}%</p>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <p className="text-gray-500 text-sm font-mono">Fragmentación</p>
+                <p className="text-3xl font-bold text-amber-600 mt-2">{sociogramData.metricas.fragmentacion.toFixed(1)}%</p>
               </div>
             </div>
 
@@ -285,28 +285,28 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
               const avgBienestar = bienestarCount > 0 ? (totalBienestar / bienestarCount).toFixed(1) : '0';
 
               return (
-                <div className="bg-gradient-to-br from-blue-900/20 to-blue-900/10 border border-blue-700/50 rounded-lg p-6">
-                  <h3 className="text-lg font-bold text-white mb-4">📊 Resumen de Estudiantes</h3>
+                <div className="bg-gradient-to-br from-blue-50 to-blue-50/50 border border-blue-200 rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Resumen de Estudiantes</h3>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                    <div className="bg-gray-800/40 rounded p-3">
-                      <p className="text-gray-400 text-xs">Líderes Positivos</p>
-                      <p className="text-2xl font-bold text-green-400 mt-1">{roleCount['líder positivo']}</p>
+                    <div className="bg-white rounded p-3">
+                      <p className="text-gray-500 text-xs">Líderes Positivos</p>
+                      <p className="text-2xl font-bold text-green-600 mt-1">{roleCount['líder positivo']}</p>
                     </div>
-                    <div className="bg-gray-800/40 rounded p-3">
-                      <p className="text-gray-400 text-xs">Saludables</p>
-                      <p className="text-2xl font-bold text-purple-400 mt-1">{roleCount['saludable'] + roleCount['amistoso(a)']}</p>
+                    <div className="bg-white rounded p-3">
+                      <p className="text-gray-500 text-xs">Saludables</p>
+                      <p className="text-2xl font-bold text-purple-600 mt-1">{roleCount['saludable'] + roleCount['amistoso(a)']}</p>
                     </div>
-                    <div className="bg-gray-800/40 rounded p-3">
-                      <p className="text-gray-400 text-xs">Desafíos</p>
-                      <p className="text-2xl font-bold text-red-400 mt-1">{roleCount['desafío']}</p>
+                    <div className="bg-white rounded p-3">
+                      <p className="text-gray-500 text-xs">Desafíos</p>
+                      <p className="text-2xl font-bold text-red-600 mt-1">{roleCount['desafío']}</p>
                     </div>
-                    <div className="bg-gray-800/40 rounded p-3">
-                      <p className="text-gray-400 text-xs">Promedio Bienestar</p>
-                      <p className="text-2xl font-bold text-yellow-400 mt-1">{avgBienestar}/5</p>
+                    <div className="bg-white rounded p-3">
+                      <p className="text-gray-500 text-xs">Promedio Bienestar</p>
+                      <p className="text-2xl font-bold text-yellow-600 mt-1">{avgBienestar}/5</p>
                     </div>
-                    <div className="bg-gray-800/40 rounded p-3">
-                      <p className="text-gray-400 text-xs">Estudiantes en Riesgo</p>
-                      <p className="text-2xl font-bold text-orange-400 mt-1">🔴 {atRiskCount}</p>
+                    <div className="bg-white rounded p-3">
+                      <p className="text-gray-500 text-xs">Estudiantes en Riesgo</p>
+                      <p className="text-2xl font-bold text-orange-600 mt-1">🔴 {atRiskCount}</p>
                     </div>
                   </div>
                 </div>
@@ -315,26 +315,26 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
 
             {/* Salud del Curso Card */}
             {courseVision && (
-              <div className="bg-gradient-to-br from-purple-900/20 to-purple-900/10 border border-purple-700/50 rounded-lg p-6 space-y-4">
-                <h3 className="text-lg font-bold text-white">💜 Salud del Curso</h3>
+              <div className="bg-white border border-purple-200 rounded-lg p-6 shadow-sm space-y-4">
+                <h3 className="text-lg font-bold text-gray-900">💜 Salud del Curso</h3>
 
                 {/* Course Vision Narrative */}
                 <div>
-                  <p className="text-sm text-gray-400 font-semibold mb-2">Visión del Curso</p>
-                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{courseVision.course_vision}</p>
+                  <p className="text-sm text-gray-500 font-semibold mb-2">Visión del Curso</p>
+                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{courseVision.course_vision}</p>
                 </div>
 
                 {/* Highlighted Students */}
                 {courseVision.highlighted_students && courseVision.highlighted_students.length > 0 && (
                   <div>
-                    <p className="text-sm text-green-400 font-semibold mb-2">⭐ Estudiantes Destacados</p>
+                    <p className="text-sm text-green-600 font-semibold mb-2">⭐ Estudiantes Destacados</p>
                     <div className="space-y-2">
                       {courseVision.highlighted_students.map((student: any, idx: number) => (
-                        <div key={idx} className="bg-green-900/20 border border-green-700 rounded p-2 text-sm">
-                          <p className="font-semibold text-green-300">{student.nombre}</p>
-                          <p className="text-gray-300 text-xs mt-1">{student.reason}</p>
+                        <div key={idx} className="bg-green-50 border border-green-200 rounded p-2 text-sm">
+                          <p className="font-semibold text-green-700">{student.nombre}</p>
+                          <p className="text-gray-600 text-xs mt-1">{student.reason}</p>
                           {student.strengths && student.strengths.length > 0 && (
-                            <ul className="text-xs text-gray-400 mt-1 space-y-0.5 ml-2">
+                            <ul className="text-xs text-gray-500 mt-1 space-y-0.5 ml-2">
                               {student.strengths.map((s: string, i: number) => (
                                 <li key={i}>• {s}</li>
                               ))}
@@ -349,14 +349,14 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                 {/* At-Risk Students */}
                 {courseVision.at_risk_students && courseVision.at_risk_students.length > 0 && (
                   <div>
-                    <p className="text-sm text-orange-400 font-semibold mb-2">⚠️ Requieren Atención</p>
+                    <p className="text-sm text-orange-600 font-semibold mb-2">⚠️ Requieren Atención</p>
                     <div className="space-y-2">
                       {courseVision.at_risk_students.map((student: any, idx: number) => (
-                        <div key={idx} className="bg-orange-900/20 border border-orange-700 rounded p-2 text-sm">
-                          <p className="font-semibold text-orange-300">{student.nombre}</p>
-                          <p className="text-gray-300 text-xs mt-1">{student.reason}</p>
+                        <div key={idx} className="bg-orange-50 border border-orange-200 rounded p-2 text-sm">
+                          <p className="font-semibold text-orange-700">{student.nombre}</p>
+                          <p className="text-gray-600 text-xs mt-1">{student.reason}</p>
                           {student.concerns && student.concerns.length > 0 && (
-                            <ul className="text-xs text-gray-400 mt-1 space-y-0.5 ml-2">
+                            <ul className="text-xs text-gray-500 mt-1 space-y-0.5 ml-2">
                               {student.concerns.map((c: string, i: number) => (
                                 <li key={i}>• {c}</li>
                               ))}
@@ -371,8 +371,8 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                 {/* Dynamics Summary */}
                 {courseVision.dynamics_summary && (
                   <div>
-                    <p className="text-sm text-blue-400 font-semibold mb-2">🔗 Dinámicas del Grupo</p>
-                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{courseVision.dynamics_summary}</p>
+                    <p className="text-sm text-blue-600 font-semibold mb-2">🔗 Dinámicas del Grupo</p>
+                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{courseVision.dynamics_summary}</p>
                   </div>
                 )}
               </div>
@@ -388,7 +388,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                   className={`px-3 py-1 text-sm rounded transition ${
                     sortBy === option
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   {option === 'nombre' && 'Nombre'}
@@ -420,7 +420,7 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
 
                     return (
                       <tr key={student.id} className="hover:bg-gray-700/50 transition">
-                        <td className="px-4 py-3 text-white font-medium">{student.nombre}</td>
+                        <td className="px-4 py-3 text-gray-900 font-medium">{student.nombre}</td>
                         <td className="px-4 py-3 text-center">
                           <span className={`px-2 py-1 text-xs rounded border ${getRoleColor(student.rol)}`}>
                             {student.rol || 'N/A'}
@@ -428,23 +428,23 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className={`text-lg font-bold ${
-                            bienestar >= 4 ? 'text-green-400' :
-                            bienestar >= 3 ? 'text-yellow-400' :
-                            'text-red-400'
+                            bienestar >= 4 ? 'text-green-600' :
+                            bienestar >= 3 ? 'text-yellow-600' :
+                            'text-red-600'
                           }`}>
                             {bienestar}/5
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className="bg-green-900/30 text-green-300 px-2 py-1 rounded text-xs font-semibold">
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">
                             {mencPositivas}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className={`px-2 py-1 rounded text-xs font-semibold ${
                             mencNegativas > 0
-                              ? 'bg-red-900/30 text-red-300'
-                              : 'bg-gray-700 text-gray-400'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-500'
                           }`}>
                             {mencNegativas}
                           </span>
@@ -461,21 +461,21 @@ const Sociogram: React.FC<SociogramProps> = ({ onNavigate }) => {
 
             {/* Leyenda */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <h3 className="text-white font-semibold mb-3">Roles</h3>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <h3 className="text-gray-900 font-semibold mb-3">Roles</h3>
                 <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-green-500 rounded-full"></span> <span className="text-gray-300">Líder Positivo</span></li>
-                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-purple-500 rounded-full"></span> <span className="text-gray-300">Saludable / Amistoso(a)</span></li>
-                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full"></span> <span className="text-gray-300">Desafío</span></li>
-                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-gray-500 rounded-full"></span> <span className="text-gray-300">No responde</span></li>
+                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-green-500 rounded-full"></span> <span className="text-gray-700">Líder Positivo</span></li>
+                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-purple-500 rounded-full"></span> <span className="text-gray-700">Saludable / Amistoso(a)</span></li>
+                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full"></span> <span className="text-gray-700">Desafío</span></li>
+                  <li className="flex items-center gap-2"><span className="w-2 h-2 bg-gray-500 rounded-full"></span> <span className="text-gray-700">No responde</span></li>
                 </ul>
               </div>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <h3 className="text-white font-semibold mb-3">Niveles de Riesgo</h3>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <h3 className="text-gray-900 font-semibold mb-3">Niveles de Riesgo</h3>
                 <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2"><span className="text-lg">🔴</span> <span className="text-gray-300">Alto: menciones negativas ≥3 o bienestar ≤2</span></li>
-                  <li className="flex items-center gap-2"><span className="text-lg">🟡</span> <span className="text-gray-300">Medio: menciones negativas ≥1 o bienestar ≤3</span></li>
-                  <li className="flex items-center gap-2"><span className="text-lg">🟢</span> <span className="text-gray-300">Bajo: sin menciones negativas y bienestar mayor a 3</span></li>
+                  <li className="flex items-center gap-2"><span className="text-lg">🔴</span> <span className="text-gray-700">Alto: menciones negativas ≥3 o bienestar ≤2</span></li>
+                  <li className="flex items-center gap-2"><span className="text-lg">🟡</span> <span className="text-gray-700">Medio: menciones negativas ≥1 o bienestar ≤3</span></li>
+                  <li className="flex items-center gap-2"><span className="text-lg">🟢</span> <span className="text-gray-700">Bajo: sin menciones negativas y bienestar mayor a 3</span></li>
                 </ul>
               </div>
             </div>
