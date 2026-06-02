@@ -12,6 +12,7 @@ import {
 import { collection, onSnapshot, query, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Conflict, ConflictStatus, Severity, Student } from '../types';
+import { DEFAULT_COURSE_ID } from '../lib/constants';
 
 const Conflicts: React.FC = () => {
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
@@ -41,7 +42,7 @@ const Conflicts: React.FC = () => {
     const selectedStudents = Array.from(formData.getAll('students') as string[]);
 
     const newConflict = {
-      courseId: 'default-course',
+      courseId: DEFAULT_COURSE_ID,
       date: new Date().toISOString().split('T')[0],
       description: formData.get('description') as string,
       severity: formData.get('severity') as Severity,
@@ -75,7 +76,7 @@ const Conflicts: React.FC = () => {
     <div className="p-4 md:p-8 space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight text-sans flex items-center gap-3">
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight font-sans flex items-center gap-3">
             <ShieldAlert className="w-8 h-8 text-red-500" />
             Registro de Convivencia
           </h2>
