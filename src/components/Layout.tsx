@@ -94,8 +94,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
                 >
                   {isActive && (
                     <motion.div
-                      layoutId="active-nav-bg"
-                      className="absolute inset-0 bg-primary-50 border border-primary-100 rounded-2xl"
+                      className="absolute inset-0 bg-primary-50 border border-primary-light rounded-2xl"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
