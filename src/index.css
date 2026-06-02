@@ -49,7 +49,7 @@
     @apply font-sans antialiased;
     background-color: var(--color-bg);
     color: var(--color-text);
-    selection: bg-blue-500/30;
+    selection: var(--color-primary)/30;
   }
 
   h1, h2, h3, h4, h5, h6 {
