@@ -74,15 +74,15 @@ const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen, onClo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-md rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-        <h3 className="text-2xl font-bold text-white mb-2 font-display">Importar Alumnos</h3>
-        <p className="text-neutral-400 mb-6 text-sm">Sube un archivo CSV o Excel con los datos de tus estudiantes. Puedes descargar la plantilla para ver el formato requerido.</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+      <div className="bg-white border border-gray-200 w-full max-w-md rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+        <h3 className="text-2xl font-bold text-gray-900 mb-2 font-display">Importar Alumnos</h3>
+        <p className="text-gray-500 mb-6 text-sm">Sube un archivo CSV o Excel con los datos de tus estudiantes. Puedes descargar la plantilla para ver el formato requerido.</p>
 
         <div className="space-y-4">
           <button
             onClick={downloadTemplate}
-            className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-[#111111] text-blue-400 rounded-2xl font-bold hover:bg-[#1a1a1a] transition-all border border-blue-500/20"
+            className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-gray-100 text-blue-600 rounded-2xl font-bold hover:bg-gray-200 transition-all border border-blue-200"
           >
             <Download className="w-5 h-5" />
             Descargar Plantilla
@@ -99,7 +99,7 @@ const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen, onClo
             />
             <button
               disabled={isImporting}
-              className={`w-full flex items-center justify-center gap-2 py-3 px-6 ${isImporting ? 'bg-neutral-800 text-neutral-500' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-[0_0_20px_rgba(37,99,235,0.3)]'} rounded-2xl font-bold transition-all`}
+              className={`w-full flex items-center justify-center gap-2 py-3 px-6 ${isImporting ? 'bg-gray-200 text-gray-400' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'} rounded-2xl font-bold transition-all`}
             >
               <Upload className="w-5 h-5" />
               {isImporting ? 'Importando...' : 'Subir Archivo'}
@@ -111,7 +111,7 @@ const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen, onClo
               type="button"
               disabled={isImporting}
               onClick={onClose}
-              className="w-full py-3 px-6 bg-white/5 text-neutral-300 rounded-2xl font-bold hover:bg-white/10 transition-all border border-white/5"
+              className="w-full py-3 px-6 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all border border-gray-200"
             >
               Cerrar
             </button>

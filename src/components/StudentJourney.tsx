@@ -112,8 +112,8 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
 
   if (sortedResponses.length === 0) {
     return (
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-8 text-center">
-        <p className="text-neutral-400">No hay respuestas de formularios para este estudiante</p>
+      <div className="bg-white border border-gray-200 rounded-xl p-8 text-center shadow-sm">
+        <p className="text-gray-500">No hay respuestas de formularios para este estudiante</p>
       </div>
     );
   }
@@ -121,11 +121,11 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a1a1a] to-[#0a0a0a] border border-blue-500/20 rounded-xl p-8">
+      <div className="bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 rounded-xl p-8">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-white mb-2">{studentName}</h2>
-            <p className="text-neutral-400">Viaje de transformación académica y personal</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">{studentName}</h2>
+            <p className="text-gray-600">Viaje de transformación académica y personal</p>
           </div>
           <div className="flex gap-3">
             {sortedResponses.length >= 2 && !narrative && (
@@ -156,12 +156,12 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
         {insights.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mt-6">
             {insights.map((insight, idx) => (
-              <div key={idx} className="bg-black/30 rounded-lg p-3 border border-white/5">
+              <div key={idx} className="bg-white/70 rounded-lg p-3 border border-gray-200">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-blue-400">{insight.icon}</span>
-                  <p className="text-xs text-neutral-400 font-bold">{insight.category}</p>
+                  <span className="text-blue-600">{insight.icon}</span>
+                  <p className="text-xs text-gray-600 font-bold">{insight.category}</p>
                 </div>
-                <p className="text-sm text-white font-bold">{insight.label}</p>
+                <p className="text-sm text-gray-900 font-bold">{insight.label}</p>
               </div>
             ))}
           </div>
@@ -169,9 +169,9 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
       </div>
 
       {/* Timeline */}
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-8">
-        <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-blue-400" />
+      <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+        <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+          <Calendar className="w-5 h-5 text-blue-500" />
           Línea de Tiempo
         </h3>
 
@@ -191,23 +191,23 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
                     className={`w-4 h-4 rounded-full border-2 ${
                       isFirst
                         ? 'bg-blue-500 border-blue-500'
-                        : 'bg-neutral-700 border-neutral-600'
+                        : 'bg-gray-300 border-gray-400'
                     }`}
                   />
                   {!isLast && (
-                    <div className="w-0.5 h-20 bg-gradient-to-b from-neutral-600 to-neutral-900 mt-2" />
+                    <div className="w-0.5 h-20 bg-gradient-to-b from-gray-300 to-gray-400 mt-2" />
                   )}
                 </div>
 
                 {/* Content */}
                 <div className="pb-8 flex-1">
-                  <div className="bg-black/40 rounded-lg p-4 border border-white/5 hover:border-white/10 transition-all">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 transition-all">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="font-bold text-white text-lg">{label}</p>
-                        <p className="text-sm text-neutral-400">{date}</p>
+                        <p className="font-bold text-gray-900 text-lg">{label}</p>
+                        <p className="text-sm text-gray-500">{date}</p>
                       </div>
-                      <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30">
+                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded border border-blue-200">
                         {response.formType.replace(/_/g, ' ')}
                       </span>
                     </div>
@@ -215,33 +215,33 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
                     {/* Moment Insights */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                       {response.responses.academic?.desempeño && (
-                        <div className="bg-white/5 rounded p-2 border border-white/5">
-                          <p className="text-xs text-neutral-400 mb-1">Académico</p>
-                          <p className="text-sm text-white font-bold truncate">
+                        <div className="bg-white rounded p-2 border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">Académico</p>
+                          <p className="text-sm text-gray-900 font-bold truncate">
                             {response.responses.academic.desempeño.substring(0, 20)}
                           </p>
                         </div>
                       )}
                       {response.responses.emotional?.bienestar && (
-                        <div className="bg-white/5 rounded p-2 border border-white/5">
-                          <p className="text-xs text-neutral-400 mb-1">Bienestar</p>
-                          <p className="text-sm text-white font-bold truncate">
+                        <div className="bg-white rounded p-2 border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">Bienestar</p>
+                          <p className="text-sm text-gray-900 font-bold truncate">
                             {response.responses.emotional.bienestar.substring(0, 20)}
                           </p>
                         </div>
                       )}
                       {response.responses.future?.carrera_opcion && (
-                        <div className="bg-white/5 rounded p-2 border border-white/5">
-                          <p className="text-xs text-neutral-400 mb-1">Vocación</p>
-                          <p className="text-sm text-white font-bold truncate">
+                        <div className="bg-white rounded p-2 border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">Vocación</p>
+                          <p className="text-sm text-gray-900 font-bold truncate">
                             {response.responses.future.carrera_opcion.substring(0, 20)}
                           </p>
                         </div>
                       )}
                       {response.responses.spiritual?.importancia_fe && (
-                        <div className="bg-white/5 rounded p-2 border border-white/5">
-                          <p className="text-xs text-neutral-400 mb-1">Espiritual</p>
-                          <p className="text-sm text-white font-bold truncate">
+                        <div className="bg-white rounded p-2 border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">Espiritual</p>
+                          <p className="text-sm text-gray-900 font-bold truncate">
                             {response.responses.spiritual.importancia_fe.substring(0, 20)}
                           </p>
                         </div>
@@ -257,12 +257,12 @@ export const StudentJourney: React.FC<StudentJourneyProps> = ({
 
       {/* Growth Narrative Section */}
       {narrative && (
-        <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-blue-500/20 rounded-xl p-8">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-            <BookOpen className="w-5 h-5 text-blue-400" />
+        <div className="bg-gradient-to-b from-blue-100 to-purple-100 border border-blue-200 rounded-xl p-8">
+          <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+            <BookOpen className="w-5 h-5 text-blue-500" />
             Narrativa de Crecimiento
           </h3>
-          <p className="text-neutral-200 leading-relaxed text-sm md:text-base">{narrative}</p>
+          <p className="text-gray-700 leading-relaxed text-sm md:text-base">{narrative}</p>
         </div>
       )}
     </div>

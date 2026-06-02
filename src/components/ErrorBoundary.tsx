@@ -47,28 +47,28 @@ export default class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-[#111] border border-red-900/50 rounded-lg p-6 text-center">
+        <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white border border-gray-200 rounded-lg p-6 text-center shadow-lg">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-red-900/20 rounded-full">
-                <AlertTriangle className="w-10 h-10 text-red-400" />
+              <div className="p-3 bg-red-50 rounded-full">
+                <AlertTriangle className="w-10 h-10 text-red-500" />
               </div>
             </div>
 
-            <h1 className="text-xl font-semibold text-red-400 mb-2">
+            <h1 className="text-xl font-semibold text-red-600 mb-2">
               Something went wrong
             </h1>
 
-            <p className="text-gray-400 text-sm mb-4">
+            <p className="text-gray-500 text-sm mb-4">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
-              <details className="text-left mt-4 mb-4 p-3 bg-black/30 rounded border border-gray-800">
+              <details className="text-left mt-4 mb-4 p-3 bg-gray-50 rounded border border-gray-200">
                 <summary className="text-xs text-gray-500 cursor-pointer">
                   Error Details
                 </summary>
-                <pre className="mt-2 text-xs text-gray-400 overflow-auto max-h-32">
+                <pre className="mt-2 text-xs text-gray-600 overflow-auto max-h-32">
                   {this.state.error?.stack}
                 </pre>
               </details>
@@ -85,7 +85,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleGoHome}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-lg transition-colors"
               >
                 <Home className="w-4 h-4" />
                 Go to Home

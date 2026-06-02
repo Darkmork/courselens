@@ -94,18 +94,18 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
   return (
     <div className="space-y-8">
       {/* Main Header */}
-      <div className="bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 border border-blue-500/30 rounded-2xl p-10">
+      <div className="bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 border border-blue-200 rounded-2xl p-10">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">{courseName}</h1>
-            <p className="text-lg text-neutral-300 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">{courseName}</h1>
+            <p className="text-lg text-gray-600 mb-6">
               Historia colectiva de transformación académica, emocional y vocacional
             </p>
 
             {/* Progress Timeline */}
             {stats.momentsCaptured.length > 0 && (
-              <div className="inline-block bg-black/40 border border-white/10 rounded-lg px-4 py-2">
-                <p className="text-sm text-neutral-300 font-mono">
+              <div className="inline-block bg-white/70 border border-gray-200 rounded-lg px-4 py-2">
+                <p className="text-sm text-gray-700 font-mono">
                   {getMomentProgress()}
                 </p>
               </div>
@@ -172,10 +172,10 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
               key={idx}
               className={`bg-gradient-to-br ${metric.color} p-0.5 rounded-xl`}
             >
-              <div className="bg-[#1a1a1a] rounded-lg p-6 h-full">
-                <Icon className="w-6 h-6 text-white/80 mb-3" />
-                <p className="text-3xl font-bold text-white">{metric.value}</p>
-                <p className="text-sm text-neutral-400 mt-1">{metric.label}</p>
+              <div className="bg-white rounded-lg p-6 h-full shadow-sm">
+                <Icon className="w-6 h-6 text-gray-600 mb-3" />
+                <p className="text-3xl font-bold text-gray-900">{metric.value}</p>
+                <p className="text-sm text-gray-500 mt-1">{metric.label}</p>
               </div>
             </div>
           );
@@ -183,37 +183,37 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
       </div>
 
       {/* Course Narrative */}
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-8">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <BookOpen className="w-6 h-6 text-blue-400" />
+      <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+          <BookOpen className="w-6 h-6 text-blue-500" />
           Narrativa del Curso
         </h2>
 
         {aiNarrative ? (
-          <div className="bg-gradient-to-b from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-lg p-6">
-            <p className="text-neutral-200 leading-relaxed whitespace-pre-wrap">{aiNarrative}</p>
+          <div className="bg-gradient-to-b from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{aiNarrative}</p>
           </div>
         ) : (
-          <div className="prose prose-invert max-w-none">
-            <div className="space-y-4 text-neutral-200 leading-relaxed">
+          <div className="prose prose-gray max-w-none">
+            <div className="space-y-4 text-gray-700 leading-relaxed">
             <p className="text-base">
-              <span className="font-bold text-white">"{courseName}"</span> es un viaje colectivo de {stats.totalStudents} estudiantes de tercero medio que marcó un quiebre en su comprensión de sí mismos, sus relaciones y sus futuros posibles.
+              <span className="font-bold text-gray-900">"{courseName}"</span> es un viaje colectivo de {stats.totalStudents} estudiantes de tercero medio que marcó un quiebre en su comprensión de sí mismos, sus relaciones y sus futuros posibles.
             </p>
 
             <p className="text-base">
-              En <span className="text-blue-300 font-bold">marzo</span>, cuando comenzó el año, el curso era un mosaico de expectativas, inseguridades y sueños apenas articulados. A través de formularios iniciales, capturamos quiénes creían ser: sus fortalezas académicas, sus miedos silenciosos, los primeros destellos de vocaciones emergentes, y sus relaciones —tanto las sólidas como las frágiles.
+              En <span className="text-blue-600 font-bold">marzo</span>, cuando comenzó el año, el curso era un mosaico de expectativas, inseguridades y sueños apenas articulados. A través de formularios iniciales, capturamos quiénes creían ser: sus fortalezas académicas, sus miedos silenciosos, los primeros destellos de vocaciones emergentes, y sus relaciones —tanto las sólidas como las frágiles.
             </p>
 
             <p className="text-base">
-              Siete semanas después, en <span className="text-yellow-300 font-bold">junio</span>, regresamos para encontrar un grupo en movimiento. Algunos descubrieron nuevas pasiones. Otros enfrentaron desafíos académicos inesperados. Las dinámicas sociales evolucionaron: nuevas amistades se forjaron, algunas tensiones se resolvieron, y la cohesión del grupo comenzó a tomar forma real.
+              Siete semanas después, en <span className="text-yellow-600 font-bold">junio</span>, regresamos para encontrar un grupo en movimiento. Algunos descubrieron nuevas pasiones. Otros enfrentaron desafíos académicos inesperados. Las dinámicas sociales evolucionaron: nuevas amistades se forjaron, algunas tensiones se resolvieron, y la cohesión del grupo comenzó a tomar forma real.
             </p>
 
             <p className="text-base">
-              Finalmente, en <span className="text-green-300 font-bold">septiembre</span>, al ingresar a cuarto medio, el curso había sido transformado. Ya no eran preguntas sin respuesta, sino estudiantes con decisiones vocacionales claras, una mayor claridad sobre sus fortalezas, una red relacional más sólida, y una comprensión más profunda de quiénes querían ser.
+              Finalmente, en <span className="text-green-600 font-bold">septiembre</span>, al ingresar a cuarto medio, el curso había sido transformado. Ya no eran preguntas sin respuesta, sino estudiantes con decisiones vocacionales claras, una mayor claridad sobre sus fortalezas, una red relacional más sólida, y una comprensión más profunda de quiénes querían ser.
             </p>
 
-            <p className="text-base italic text-neutral-300 mt-6 pt-4 border-t border-white/10">
-              Esta no es solo una base de datos educativa. Es un <span className="text-white font-bold">registro vivo</span> de cómo los jóvenes crecen, se transforman, y encuentran su lugar en el mundo.
+            <p className="text-base italic text-gray-500 mt-6 pt-4 border-t border-gray-200">
+              Esta no es solo una base de datos educativa. Es un <span className="text-gray-900 font-bold">registro vivo</span> de cómo los jóvenes crecen, se transforman, y encuentran su lugar en el mundo.
             </p>
             </div>
           </div>
@@ -221,9 +221,9 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
       </div>
 
       {/* Student Highlights */}
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-8">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <Award className="w-6 h-6 text-purple-400" />
+      <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+          <Award className="w-6 h-6 text-purple-500" />
           Historias Destacadas
         </h2>
 
@@ -231,15 +231,15 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
           {highlightedStudents.map((student, idx) => (
             <div
               key={student.id}
-              className="bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-lg p-5 hover:border-white/20 transition-all"
+              className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition-all"
             >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-white text-lg">{student.name}</h3>
+                <h3 className="font-bold text-gray-900 text-lg">{student.name}</h3>
                 {idx === 0 && <span className="text-2xl">🌟</span>}
                 {idx === 1 && <span className="text-2xl">⚡</span>}
                 {idx === 2 && <span className="text-2xl">🚀</span>}
               </div>
-              <p className="text-sm text-neutral-400">
+              <p className="text-sm text-gray-500">
                 {student.cohortGroup ? `Grupo: ${student.cohortGroup}` : 'Estudiante del curso'}
               </p>
             </div>
@@ -290,13 +290,13 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
               key={idx}
               className={`bg-gradient-to-br ${section.color} border ${section.border} rounded-lg p-6`}
             >
-              <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Icon className="w-5 h-5" />
                 {section.title}
               </h3>
               <ul className="space-y-2">
                 {section.items.map((item, i) => (
-                  <li key={i} className="text-sm text-neutral-200">
+                  <li key={i} className="text-sm text-gray-700">
                     {item}
                   </li>
                 ))}
@@ -307,11 +307,11 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
       </div>
 
       {/* CTA */}
-      <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/30 rounded-xl p-8 text-center">
-        <h3 className="text-2xl font-bold text-white mb-3">
+      <div className="bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 rounded-xl p-8 text-center">
+        <h3 className="text-2xl font-bold text-gray-900 mb-3">
           Transforma datos en historias significativas
         </h3>
-        <p className="text-neutral-300 mb-6 max-w-2xl mx-auto">
+        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
           Cada respuesta de formulario es un capítulo. Cada estudiante es un protagonista. Juntos, crean la historia única de tu curso.
         </p>
         {onExportBook && (

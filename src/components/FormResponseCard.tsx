@@ -17,16 +17,16 @@ export const FormResponseCard: React.FC<FormResponseCardProps> = ({
 
   const getCategoryColor = (cat: string): string => {
     const colors: Record<string, string> = {
-      personal: 'bg-blue-500/10 border-blue-500/30 text-blue-300',
-      academic: 'bg-green-500/10 border-green-500/30 text-green-300',
-      social: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300',
-      personal_traits: 'bg-pink-500/10 border-pink-500/30 text-pink-300',
-      emotional: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-300',
-      family: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300',
-      spiritual: 'bg-purple-500/10 border-purple-500/30 text-purple-300',
-      future: 'bg-orange-500/10 border-orange-500/30 text-orange-300',
+      personal: 'bg-blue-50 border-blue-200 text-blue-700',
+      academic: 'bg-green-50 border-green-200 text-green-700',
+      social: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+      personal_traits: 'bg-pink-50 border-pink-200 text-pink-700',
+      emotional: 'bg-yellow-50 border-yellow-200 text-yellow-700',
+      family: 'bg-indigo-50 border-indigo-200 text-indigo-700',
+      spiritual: 'bg-purple-50 border-purple-200 text-purple-700',
+      future: 'bg-orange-50 border-orange-200 text-orange-700',
     };
-    return colors[cat] || 'bg-neutral-500/10 border-neutral-500/30 text-neutral-300';
+    return colors[cat] || 'bg-gray-50 border-gray-200 text-gray-700';
   };
 
   const getChangeIndicator = (key: string): JSX.Element | null => {
@@ -66,7 +66,7 @@ export const FormResponseCard: React.FC<FormResponseCardProps> = ({
         <div className="flex items-center gap-2">
           <span className="font-bold text-sm uppercase tracking-wider">{categoryLabel}</span>
           {!isExpanded && (
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-gray-500">
               ({Object.keys(data).filter(k => data[k]).length} campos)
             </span>
           )}
@@ -83,9 +83,9 @@ export const FormResponseCard: React.FC<FormResponseCardProps> = ({
           {Object.entries(data).map(([key, value]) => (
             value !== undefined && value !== null && value !== '' && (
               <div key={key} className="flex items-start justify-between gap-2 text-xs">
-                <span className="text-neutral-300 font-mono">{key.replace(/_/g, ' ')}:</span>
+                <span className="text-gray-700 font-mono">{key.replace(/_/g, ' ')}:</span>
                 <div className="flex items-center gap-2 text-right">
-                  <span className="text-neutral-200">{formatValue(value)}</span>
+                  <span className="text-gray-900">{formatValue(value)}</span>
                   {getChangeIndicator(key)}
                 </div>
               </div>

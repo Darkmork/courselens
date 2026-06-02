@@ -60,12 +60,12 @@ export const StudentGrowthTimeline: React.FC<StudentGrowthTimelineProps> = ({ st
   };
 
   if (isLoading) {
-    return <div className="p-6 text-neutral-400">Cargando datos de crecimiento...</div>;
+    return <div className="p-6 text-gray-500">Cargando datos de crecimiento...</div>;
   }
 
   if (formResponses.length === 0) {
     return (
-      <div className="p-6 text-neutral-400 text-center">
+      <div className="p-6 text-gray-500 text-center">
         No hay respuestas de formulario registradas para este estudiante.
       </div>
     );
@@ -76,22 +76,22 @@ export const StudentGrowthTimeline: React.FC<StudentGrowthTimelineProps> = ({ st
       {/* Header with controls */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-white">Timeline de Crecimiento</h3>
-          <p className="text-xs text-neutral-400 mt-1">
+          <h3 className="text-lg font-bold text-gray-900">Timeline de Crecimiento</h3>
+          <p className="text-xs text-gray-500 mt-1">
             {formResponses.length} formulario{formResponses.length !== 1 ? 's' : ''} registrado{formResponses.length !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowComparative(!showComparative)}
-            className="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-sm font-mono border border-blue-500/30 transition-all"
+            className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm font-mono border border-blue-200 transition-all"
           >
             {showComparative ? 'Timeline' : 'Comparativas'}
           </button>
           <button
             onClick={generateNarrative}
             disabled={generatingNarrative || formResponses.length < 2}
-            className="px-4 py-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-sm font-mono border border-purple-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 text-sm font-mono border border-purple-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             {generatingNarrative ? 'Generando...' : 'Relato de IA'}
@@ -101,20 +101,20 @@ export const StudentGrowthTimeline: React.FC<StudentGrowthTimelineProps> = ({ st
 
       {/* Narrative Modal/Section */}
       {narrative && (
-        <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-xl p-6">
+        <div className="bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-300 rounded-xl p-6">
           <div className="flex justify-between items-start mb-3">
-            <h4 className="font-bold text-white">Relato de Crecimiento</h4>
+            <h4 className="font-bold text-gray-900">Relato de Crecimiento</h4>
             <button
               onClick={() => setNarrative(null)}
-              className="text-neutral-400 hover:text-white"
+              className="text-gray-500 hover:text-gray-700"
             >
               ✕
             </button>
           </div>
-          <p className="text-neutral-200 text-sm leading-relaxed whitespace-pre-wrap">{narrative}</p>
+          <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{narrative}</p>
           <button
             onClick={() => navigator.clipboard.writeText(narrative)}
-            className="mt-4 text-xs px-3 py-2 rounded bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30"
+            className="mt-4 text-xs px-3 py-2 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200"
           >
             Copiar
           </button>
@@ -128,7 +128,7 @@ export const StudentGrowthTimeline: React.FC<StudentGrowthTimelineProps> = ({ st
         <div className="space-y-8">
           {formResponses.map(response => (
             <div key={response.id}>
-              <div className="text-sm font-mono text-neutral-400 mb-3">
+              <div className="text-sm font-mono text-gray-500 mb-3">
                 {new Date(response.timestamp).toLocaleDateString('es-CL')} • {response.formType.replace(/_/g, ' ')}
               </div>
               <div className="space-y-3">

@@ -148,17 +148,17 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-3xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 mt-10 mb-10 max-h-[90vh] overflow-y-auto relative flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md overflow-y-auto">
+      <div className="bg-white border border-gray-200 w-full max-w-3xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 mt-10 mb-10 max-h-[90vh] overflow-y-auto relative flex flex-col">
         {/* Sticky Header */}
-        <div className="sticky top-0 bg-[#0A0A0A] border-b border-white/10 p-6 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 bg-[#1a1a1a] border-2 border-white/10 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden text-2xl font-bold text-neutral-400 relative group cursor-pointer">
+            <div className="h-16 w-16 bg-gray-100 border-2 border-gray-200 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden text-2xl font-bold text-gray-400 relative group cursor-pointer">
               {profileStudent.photoUrl ? <img src={profileStudent.photoUrl} alt="" className="w-full h-full object-cover" /> : profileStudent.name[0]}
               <button
                 onClick={() => photoInputRef.current?.click()}
                 disabled={isUploadingPhoto}
-                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
               >
                 <Camera className="w-6 h-6 text-white" />
               </button>
@@ -172,20 +172,20 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white font-display">{profileStudent.name}</h2>
-              <p className="text-neutral-400 font-mono text-sm">RUT: {profileStudent.rut}</p>
+              <h2 className="text-2xl font-bold text-gray-900 font-display">{profileStudent.name}</h2>
+              <p className="text-gray-500 font-mono text-sm">RUT: {profileStudent.rut}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-neutral-400 hover:text-white transition-all"
+            className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 hover:text-gray-700 transition-all"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Tab Bar */}
-        <div className="flex gap-1 px-6 pt-6 border-b border-white/10">
+        <div className="flex gap-1 px-6 pt-6 border-b border-gray-200">
           {(['personal', 'academico', 'familia', 'salud', 'crecimiento'] as const).map((tab) => (
             <button
               key={tab}
@@ -193,7 +193,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               className={`px-4 py-2 font-bold rounded-t-2xl transition-all ${
                 activeTab === tab
                   ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-neutral-400 hover:text-neutral-300'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {tab === 'personal' && 'Personal'}
@@ -211,28 +211,28 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Nombre</label>
-                  <input type="text" name="name" defaultValue={profileStudent.name} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Nombre</label>
+                  <input type="text" name="name" defaultValue={profileStudent.name} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">RUT</label>
-                  <input type="text" name="rut" defaultValue={profileStudent.rut} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">RUT</label>
+                  <input type="text" name="rut" defaultValue={profileStudent.rut} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Fecha de Nacimiento</label>
-                  <input type="date" name="dateOfBirth" defaultValue={profileStudent.dateOfBirth || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Fecha de Nacimiento</label>
+                  <input type="date" name="dateOfBirth" defaultValue={profileStudent.dateOfBirth || ''} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Email</label>
-                  <input type="email" name="email" defaultValue={profileStudent.email || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Email</label>
+                  <input type="email" name="email" defaultValue={profileStudent.email || ''} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Teléfono</label>
-                  <input type="tel" name="phone" defaultValue={profileStudent.phone || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Teléfono</label>
+                  <input type="tel" name="phone" defaultValue={profileStudent.phone || ''} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Dirección</label>
-                  <input type="text" name="address" defaultValue={profileStudent.address || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" />
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Dirección</label>
+                  <input type="text" name="address" defaultValue={profileStudent.address || ''} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900" />
                 </div>
               </div>
             </>
@@ -242,8 +242,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Desempeño Académico</label>
-                  <select name="academicPerformance" defaultValue={profileStudent.academicPerformance || ''} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white">
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Desempeño Académico</label>
+                  <select name="academicPerformance" defaultValue={profileStudent.academicPerformance || ''} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900">
                     <option value="">Seleccionar...</option>
                     <option value="Muy Alto">Muy Alto</option>
                     <option value="Alto">Alto</option>
@@ -253,8 +253,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Estado de Riesgo</label>
-                  <select name="riskStatus" defaultValue={profileStudent.riskStatus} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white">
+                  <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Estado de Riesgo</label>
+                  <select name="riskStatus" defaultValue={profileStudent.riskStatus} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900">
                     <option value="Verde">Verde</option>
                     <option value="Amarillo">Amarillo</option>
                     <option value="Rojo">Rojo</option>
@@ -262,12 +262,12 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Notas Académicas</label>
-                <textarea name="academicNotes" defaultValue={profileStudent.academicNotes || ''} rows={3} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Notas Académicas</label>
+                <textarea name="academicNotes" defaultValue={profileStudent.academicNotes || ''} rows={3} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 resize-none" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Notas de Comportamiento</label>
-                <textarea name="behaviorNotes" defaultValue={profileStudent.behaviorNotes || ''} rows={3} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Notas de Comportamiento</label>
+                <textarea name="behaviorNotes" defaultValue={profileStudent.behaviorNotes || ''} rows={3} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 resize-none" />
               </div>
             </>
           )}
@@ -275,25 +275,25 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           {activeTab === 'familia' && (
             <>
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Situación Familiar</label>
-                <textarea name="familySituation" defaultValue={profileStudent.familySituation || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Situación Familiar</label>
+                <textarea name="familySituation" defaultValue={profileStudent.familySituation || ''} rows={2} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 resize-none" />
               </div>
-              <div className="border-t border-white/10 pt-4">
-                <h4 className="font-bold text-white mb-4">Apoderado 1</h4>
+              <div className="border-t border-gray-200 pt-4">
+                <h4 className="font-bold text-gray-900 mb-4">Apoderado 1</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" name="guardian1Name" defaultValue={profileStudent.guardian1Name || ''} placeholder="Nombre" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
-                  <input type="text" name="guardian1Relation" defaultValue={profileStudent.guardian1Relation || ''} placeholder="Relación (Padre, Madre, etc.)" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
-                  <input type="email" name="guardian1Email" defaultValue={profileStudent.guardian1Email || ''} placeholder="Email" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
-                  <input type="tel" name="guardian1Phone" defaultValue={profileStudent.guardian1Phone || ''} placeholder="Teléfono" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                  <input type="text" name="guardian1Name" defaultValue={profileStudent.guardian1Name || ''} placeholder="Nombre" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
+                  <input type="text" name="guardian1Relation" defaultValue={profileStudent.guardian1Relation || ''} placeholder="Relación (Padre, Madre, etc.)" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
+                  <input type="email" name="guardian1Email" defaultValue={profileStudent.guardian1Email || ''} placeholder="Email" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
+                  <input type="tel" name="guardian1Phone" defaultValue={profileStudent.guardian1Phone || ''} placeholder="Teléfono" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
                 </div>
               </div>
-              <div className="border-t border-white/10 pt-4">
-                <h4 className="font-bold text-white mb-4">Apoderado 2</h4>
+              <div className="border-t border-gray-200 pt-4">
+                <h4 className="font-bold text-gray-900 mb-4">Apoderado 2</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" name="guardian2Name" defaultValue={profileStudent.guardian2Name || ''} placeholder="Nombre" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
-                  <input type="text" name="guardian2Relation" defaultValue={profileStudent.guardian2Relation || ''} placeholder="Relación (Padre, Madre, etc.)" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
-                  <input type="email" name="guardian2Email" defaultValue={profileStudent.guardian2Email || ''} placeholder="Email" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
-                  <input type="tel" name="guardian2Phone" defaultValue={profileStudent.guardian2Phone || ''} placeholder="Teléfono" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white placeholder:text-neutral-600" />
+                  <input type="text" name="guardian2Name" defaultValue={profileStudent.guardian2Name || ''} placeholder="Nombre" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
+                  <input type="text" name="guardian2Relation" defaultValue={profileStudent.guardian2Relation || ''} placeholder="Relación (Padre, Madre, etc.)" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
+                  <input type="email" name="guardian2Email" defaultValue={profileStudent.guardian2Email || ''} placeholder="Email" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
+                  <input type="tel" name="guardian2Phone" defaultValue={profileStudent.guardian2Phone || ''} placeholder="Teléfono" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400" />
                 </div>
               </div>
             </>
@@ -302,20 +302,20 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           {activeTab === 'salud' && (
             <>
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Diagnóstico</label>
-                <textarea name="diagnosis" defaultValue={profileStudent.diagnosis || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Diagnóstico</label>
+                <textarea name="diagnosis" defaultValue={profileStudent.diagnosis || ''} rows={2} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 resize-none" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Alertas Médicas</label>
-                <textarea name="medicalAlerts" defaultValue={profileStudent.medicalAlerts || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Alertas Médicas</label>
+                <textarea name="medicalAlerts" defaultValue={profileStudent.medicalAlerts || ''} rows={2} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 resize-none" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Apoyo Externo</label>
-                <textarea name="externalSupport" defaultValue={profileStudent.externalSupport || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Apoyo Externo</label>
+                <textarea name="externalSupport" defaultValue={profileStudent.externalSupport || ''} rows={2} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 resize-none" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-neutral-400 mb-2 font-mono uppercase tracking-wider">Medidas Disciplinarias</label>
-                <textarea name="disciplinaryMeasures" defaultValue={profileStudent.disciplinaryMeasures || ''} rows={2} className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white resize-none" />
+                <label className="block text-sm font-bold text-gray-600 mb-2 font-mono uppercase tracking-wider">Medidas Disciplinarias</label>
+                <textarea name="disciplinaryMeasures" defaultValue={profileStudent.disciplinaryMeasures || ''} rows={2} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 resize-none" />
               </div>
             </>
           )}
@@ -326,14 +326,14 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
           {/* Sticky Save Button */}
           {activeTab !== 'crecimiento' && (
-            <div className="sticky bottom-0 bg-[#0A0A0A] border-t border-white/10 pt-4 mt-4 flex gap-3">
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 mt-4 flex gap-3">
               <button
                 type="submit"
                 disabled={isSavingProfile}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold transition-all ${
                   isSavingProfile
-                    ? 'bg-neutral-800 text-neutral-500'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                    ? 'bg-gray-200 text-gray-400'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
                 }`}
               >
                 <Save className="w-5 h-5" />
@@ -345,27 +345,27 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
         {/* Observations Section */}
         {activeTab !== 'crecimiento' && (
-          <div className="border-t border-white/10 p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-blue-400" />
+          <div className="border-t border-gray-200 p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-blue-500" />
               Observaciones
             </h3>
 
             <div className="space-y-3 max-h-48 overflow-y-auto">
               {observations.map(obs => (
-                <div key={obs.id} className="bg-[#111111] p-4 rounded-2xl border border-white/10">
+                <div key={obs.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-blue-400">{obs.category}</span>
-                    <span className="text-xs text-neutral-500">{new Date(obs.date).toLocaleDateString('es-CL')}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-600">{obs.category}</span>
+                    <span className="text-xs text-gray-400">{new Date(obs.date).toLocaleDateString('es-CL')}</span>
                   </div>
-                  <p className="text-neutral-300 text-sm">{obs.text}</p>
+                  <p className="text-gray-600 text-sm">{obs.text}</p>
                 </div>
               ))}
             </div>
 
-            <form onSubmit={handleAddObservation} className="space-y-3 bg-[#111111] p-4 rounded-2xl border border-white/10">
+            <form onSubmit={handleAddObservation} className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <select name="category" required className="px-4 py-2 bg-[#0A0A0A] border border-white/10 rounded-xl text-white text-sm">
+                <select name="category" required className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 text-sm">
                   <option value="">Categoría...</option>
                   <option value="Académica">Académica</option>
                   <option value="Conductual">Conductual</option>
@@ -377,7 +377,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   disabled={isAddingObservation}
                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
                     isAddingObservation
-                      ? 'bg-neutral-800 text-neutral-500'
+                      ? 'bg-gray-200 text-gray-400'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
@@ -385,29 +385,29 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   Agregar
                 </button>
               </div>
-              <textarea name="text" required placeholder="Nueva observación..." rows={2} className="w-full px-4 py-2 bg-[#0A0A0A] border border-white/10 rounded-xl text-white text-sm resize-none placeholder:text-neutral-600" />
+              <textarea name="text" required placeholder="Nueva observación..." rows={2} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 text-sm resize-none placeholder:text-gray-400" />
             </form>
           </div>
         )}
 
         {/* AI Summary Section */}
-        <div className="border-t border-white/10 p-6 bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500/20">
+        <div className="border-t border-gray-200 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="flex items-center gap-2 text-lg font-bold text-white">
-              <BrainCircuit className="text-blue-400" />
+            <h4 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+              <BrainCircuit className="text-blue-500" />
               Asistente IA para Entrevistas
             </h4>
             <button
               onClick={generateSummary}
               disabled={isSummarizing}
-              className={`px-4 py-2 ${isSummarizing ? 'bg-neutral-800 text-neutral-500' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'} rounded-xl font-bold transition-all text-sm`}
+              className={`px-4 py-2 ${isSummarizing ? 'bg-gray-200 text-gray-400' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'} rounded-xl font-bold transition-all text-sm`}
             >
               {isSummarizing ? 'Generando...' : (summary ? 'Regenerar Resumen' : 'Generar Resumen')}
             </button>
           </div>
 
           {summary && (
-            <div className="mt-6 p-6 bg-black/40 rounded-2xl border border-white/10 prose prose-invert prose-blue max-w-none text-sm md:text-base leading-relaxed">
+            <div className="mt-6 p-6 bg-white rounded-2xl border border-gray-200 prose prose-gray max-w-none text-sm md:text-base leading-relaxed">
               <div className="markdown-body">
                 <Markdown>{summary}</Markdown>
               </div>
@@ -415,7 +415,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           )}
 
           {!summary && !isSummarizing && (
-            <p className="text-neutral-400 text-sm italic">Genera un resumen analítico con la IA basándose en los datos del estudiante para prepararte para tu próxima reunión con los apoderados.</p>
+            <p className="text-gray-500 text-sm italic">Genera un resumen analítico con la IA basándose en los datos del estudiante para prepararte para tu próxima reunión con los apoderados.</p>
           )}
         </div>
       </div>
