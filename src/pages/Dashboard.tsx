@@ -199,10 +199,10 @@ const Dashboard: React.FC = () => {
   };
 
   const healthScores = [
-    { label: 'Académico', value: calculateAcademicScore(), icon: GraduationCap, color: 'text-blue-400', glow: 'shadow-[0_0_20px_rgba(96,165,250,0.2)]', border: 'border-blue-500/20' },
-    { label: 'Relacional', value: calculateRelationalScore(), icon: Users, color: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(52,211,153,0.2)]', border: 'border-emerald-500/20' },
-    { label: 'Emocional', value: calculateEmotionalScore(), icon: Heart, color: 'text-rose-400', glow: 'shadow-[0_0_20px_rgba(251,113,133,0.2)]', border: 'border-rose-500/20' },
-    { label: 'Crecimiento', value: calculateGrowthScore(), icon: Sparkles, color: 'text-purple-400', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.2)]', border: 'border-purple-500/20' },
+    { label: 'Académico', value: calculateAcademicScore(), icon: GraduationCap, color: 'text-blue-600', border: 'border-blue-200' },
+    { label: 'Relacional', value: calculateRelationalScore(), icon: Users, color: 'text-primary', border: 'border-primary/20' },
+    { label: 'Emocional', value: calculateEmotionalScore(), icon: Heart, color: 'text-rose-500', border: 'border-rose-200' },
+    { label: 'Crecimiento', value: calculateGrowthScore(), icon: Sparkles, color: 'text-purple-500', border: 'border-purple-200' },
   ];
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -231,8 +231,8 @@ const Dashboard: React.FC = () => {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-[#111] border border-white/10 p-3 rounded-lg shadow-xl backdrop-blur-md">
-          <p className="text-white font-mono text-sm">{`${payload[0].name} : ${payload[0].value}`}</p>
+        <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-lg">
+          <p className="text-gray-900 font-mono text-sm">{`${payload[0].name} : ${payload[0].value}`}</p>
         </div>
       );
     }
@@ -241,13 +241,13 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-gray-200">
         <div>
-          <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60 tracking-tight font-display mb-2">
+          <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight font-display mb-2">
             Buenos días, Profe
           </h2>
-          <p className="text-neutral-400 font-mono text-sm flex items-center gap-2">
-            <Activity className="w-4 h-4 text-emerald-400" />
+          <p className="text-primary font-mono text-sm flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" />
             Monitoreo en tiempo real del ecosistema del curso.
           </p>
         </div>
@@ -255,14 +255,13 @@ const Dashboard: React.FC = () => {
           <button
             onClick={generateAIReport}
             disabled={isGeneratingReport}
-            className="group relative px-6 py-3 bg-[#111111]/80 backdrop-blur-md/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-300 font-semibold text-white overflow-hidden disabled:opacity-50"
+            className="group relative px-6 py-3 bg-accent hover:bg-accent-dark rounded-xl transition-all duration-300 font-semibold text-white overflow-hidden disabled:opacity-50 shadow-sm hover:shadow-md"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-blue-500/0 -translate-x-[100%] group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
             <div className="relative z-10 flex items-center gap-2">
               {isGeneratingReport ? (
                 <LoadingSpinner size="sm" />
               ) : (
-                <Sparkles className="w-4 h-4 text-purple-400" />
+                <Sparkles className="w-4 h-4 text-orange-400" />
               )}
               <span className="font-mono text-sm">{isGeneratingReport ? 'COMPILANDO...' : 'REPORTE IA'}</span>
             </div>
@@ -298,17 +297,17 @@ const Dashboard: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
             key={score.label} 
-            className={`bg-[#0A0A0A]/50 backdrop-blur-sm p-6 rounded-2xl border ${score.border} hover:bg-white/5 transition-all duration-300 group ${score.glow}`}
+            className={`bg-white p-6 rounded-2xl border ${score.border} shadow-sm hover:shadow-md transition-all duration-300 group`}
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-white/5 border border-white/5 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 ${score.color}`}>
-              <score.icon className="w-6 h-6 drop-shadow-md" />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${score.color} bg-primary/10 border border-primary/20 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300`}>
+              <score.icon className="w-6 h-6" />
             </div>
-            <p className="text-xs font-mono text-neutral-500 mb-2 uppercase tracking-wider">{score.label}</p>
+            <p className="text-xs font-mono text-gray-500 mb-2 uppercase tracking-wider">{score.label}</p>
             <div className="flex items-end justify-between">
-              <h3 className="text-3xl font-bold text-white font-display tracking-tight">
-                {score.value}<span className="text-lg text-neutral-600 font-normal">/10</span>
+              <h3 className="text-3xl font-bold text-gray-900 font-display tracking-tight">
+                {score.value}<span className="text-lg text-gray-400 font-normal">/10</span>
               </h3>
-              <div className="flex items-center text-xs text-emerald-400 font-mono bg-emerald-400/10 px-2 py-1 rounded-md border border-emerald-400/20">
+              <div className="flex items-center text-xs text-primary font-mono bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
                 <TrendingUp className="w-3 h-3 mr-1" />
                 +2%
               </div>
@@ -319,10 +318,10 @@ const Dashboard: React.FC = () => {
 
       <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Risk Distribution */}
-        <div className="lg:col-span-1 bg-[#0A0A0A]/50 backdrop-blur-sm p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-xl flex flex-col relative overflow-hidden">
+        <div className="lg:col-span-1 bg-white p-6 md:p-8 rounded-[2rem] border border-gray-200 shadow-sm flex flex-col relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full" />
-          
-          <h3 className="text-lg font-bold text-white mb-8 font-display flex items-center gap-2">
+
+          <h3 className="text-lg font-bold text-gray-900 mb-8 font-display flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_#3b82f6]" />
             Estado del Sistema
           </h3>
@@ -346,32 +345,32 @@ const Dashboard: React.FC = () => {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center mt-1">
-                <p className="text-4xl font-bold text-white font-display tracking-tighter">{students.length}</p>
-                <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Nodos Activos</p>
+                <p className="text-4xl font-bold text-gray-900 font-display tracking-tighter">{students.length}</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Nodos Activos</p>
               </div>
             </div>
           </div>
           <div className="space-y-4 mt-auto">
             {riskData.map((d) => (
-              <div key={d.name} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+              <div key={d.name} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: d.color, color: d.color }}></div>
-                  <span className="text-sm text-neutral-300 font-medium">{d.name}</span>
+                  <span className="text-sm text-gray-700 font-medium">{d.name}</span>
                 </div>
-                <span className="text-sm font-mono font-bold text-white">{d.value}</span>
+                <span className="text-sm font-mono font-bold text-gray-900">{d.value}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Actionable Alerts */}
-        <div className="lg:col-span-2 bg-[#0A0A0A]/50 backdrop-blur-sm p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-xl">
-          <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
-            <h3 className="text-lg font-bold text-white font-display flex items-center gap-2">
+        <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900 font-display flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_10px_#f43f5e] animate-pulse" />
               Eventos Críticos
             </h3>
-            <span className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-mono tracking-widest uppercase rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.15)] flex items-center gap-2">
+            <span className="px-3 py-1 bg-red-50 border border-red-200 text-red-600 text-[10px] font-mono tracking-widest uppercase rounded-lg flex items-center gap-2">
               <Activity className="w-3 h-3" />
               {alerts.length} {alerts.length === 1 ? 'Requiere' : 'Requieren'} Atención
             </span>
@@ -379,35 +378,39 @@ const Dashboard: React.FC = () => {
           
           <div className="space-y-4">
             {alerts.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500">
+              <div className="text-center py-8 text-gray-500">
                 <p className="text-sm">No hay alertas recientes. El curso está en buen estado.</p>
               </div>
             ) : (
               alerts.map((alert, i) => (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + (i * 0.1) }}
-                key={i} 
-                className="flex flex-col sm:flex-row sm:items-start gap-4 p-5 rounded-2xl bg-[#111111] hover:bg-[#161616] border border-white/5 hover:border-white/10 transition-all cursor-pointer group"
+                key={i}
+                className={`flex flex-col sm:flex-row sm:items-start gap-4 p-5 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer group ${
+                  alert.color === 'red' ? 'border-l-4 border-l-red-500' :
+                  alert.color === 'amber' ? 'border-l-4 border-l-amber-500' :
+                  'border-l-4 border-l-blue-500'
+                }`}
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                  alert.color === 'red' ? 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 
-                  alert.color === 'amber' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 
-                  'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]'
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                  alert.color === 'red' ? 'bg-red-100 text-red-600 border border-red-200' :
+                  alert.color === 'amber' ? 'bg-amber-100 text-amber-600 border border-amber-200' :
+                  'bg-blue-100 text-blue-600 border border-blue-200'
                 }`}>
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1">
-                    <h4 className="font-bold text-white truncate font-display text-lg">{alert.title}</h4>
-                    <span className="text-[10px] text-neutral-500 font-mono tracking-widest uppercase shrink-0 bg-white/5 px-2 py-0.5 rounded-md self-start sm:self-auto">{alert.time}</span>
+                    <h4 className="font-bold text-gray-900 truncate font-display text-lg">{alert.title}</h4>
+                    <span className="text-[10px] text-gray-500 font-mono tracking-widest uppercase shrink-0 bg-gray-100 px-2 py-0.5 rounded-md self-start sm:self-auto">{alert.time}</span>
                   </div>
-                  <p className="text-sm text-neutral-400 mb-3 leading-relaxed">
-                    <span className="font-semibold text-white/90">{alert.student}:</span> {alert.desc}
+                  <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+                    <span className="font-semibold text-gray-800">{alert.student}:</span> {alert.desc}
                   </p>
-                  <button className="text-xs font-mono font-bold text-neutral-400 group-hover:text-white flex items-center gap-2 transition-all">
-                    INICIAR PROTOCOLO <ChevronRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                  <button className="text-xs font-mono font-bold text-gray-500 group-hover:text-primary flex items-center gap-2 transition-all">
+                    INICIAR PROTOCOLO <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
               </motion.div>
@@ -415,7 +418,7 @@ const Dashboard: React.FC = () => {
             )}
           </div>
 
-          <button className="w-full mt-6 py-4 text-center text-xs font-mono font-bold tracking-widest uppercase text-neutral-500 hover:text-white border border-white/5 hover:bg-white/5 rounded-xl transition-all">
+          <button className="w-full mt-6 py-4 text-center text-xs font-mono font-bold tracking-widest uppercase text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-xl transition-all">
             Cargar Log Completo
           </button>
         </div>
@@ -427,16 +430,16 @@ const Dashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           whileHover={{ scale: 1.02 }}
-          className="relative group p-8 rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all cursor-pointer overflow-hidden"
+          className="relative group p-8 rounded-2xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
-            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.15), transparent 50%)',
+            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.1), transparent 50%)',
           }} />
           <div className="relative z-10">
             <div className="text-4xl mb-3">📋</div>
-            <h3 className="font-bold text-white text-lg mb-2">Importar Formularios</h3>
-            <p className="text-sm text-neutral-400 mb-4">Carga los 3 momentos de Google Forms (Inicio, Mediados, Final)</p>
-            <span className="text-xs font-mono text-blue-400 group-hover:text-blue-300 flex items-center gap-2">
+            <h3 className="font-bold text-gray-900 text-lg mb-2">Importar Formularios</h3>
+            <p className="text-sm text-gray-600 mb-4">Carga los 3 momentos de Google Forms (Inicio, Mediados, Final)</p>
+            <span className="text-xs font-mono text-blue-600 group-hover:text-blue-700 flex items-center gap-2">
               INICIAR <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -447,16 +450,16 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           whileHover={{ scale: 1.02 }}
-          className="relative group p-8 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer overflow-hidden"
+          className="relative group p-8 rounded-2xl bg-white border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
-            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(168, 85, 247, 0.15), transparent 50%)',
+            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(168, 85, 247, 0.1), transparent 50%)',
           }} />
           <div className="relative z-10">
             <div className="text-4xl mb-3">📊</div>
-            <h3 className="font-bold text-white text-lg mb-2">Narrativa del Curso</h3>
-            <p className="text-sm text-neutral-400 mb-4">Visualiza la historia colectiva y la evolución de tu curso</p>
-            <span className="text-xs font-mono text-purple-400 group-hover:text-purple-300 flex items-center gap-2">
+            <h3 className="font-bold text-gray-900 text-lg mb-2">Narrativa del Curso</h3>
+            <p className="text-sm text-gray-600 mb-4">Visualiza la historia colectiva y la evolución de tu curso</p>
+            <span className="text-xs font-mono text-purple-600 group-hover:text-purple-700 flex items-center gap-2">
               EXPLORAR <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -467,16 +470,16 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           whileHover={{ scale: 1.02 }}
-          className="relative group p-8 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer overflow-hidden"
+          className="relative group p-8 rounded-2xl bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
-            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(16, 185, 129, 0.15), transparent 50%)',
+            background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(16, 185, 129, 0.1), transparent 50%)',
           }} />
           <div className="relative z-10">
             <div className="text-4xl mb-3">👥</div>
-            <h3 className="font-bold text-white text-lg mb-2">Perfiles Individuales</h3>
-            <p className="text-sm text-neutral-400 mb-4">Analiza el viaje de cada estudiante en detalle</p>
-            <span className="text-xs font-mono text-emerald-400 group-hover:text-emerald-300 flex items-center gap-2">
+            <h3 className="font-bold text-gray-900 text-lg mb-2">Perfiles Individuales</h3>
+            <p className="text-sm text-gray-600 mb-4">Analiza el viaje de cada estudiante en detalle</p>
+            <span className="text-xs font-mono text-primary group-hover:text-primary-dark flex items-center gap-2">
               VER ESTUDIANTES <ChevronRight className="w-4 h-4" />
             </span>
           </div>
