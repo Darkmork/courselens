@@ -160,10 +160,10 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#111111] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader className="w-8 h-8 text-blue-500 animate-spin" />
-          <p className="text-neutral-400">Cargando datos del curso...</p>
+          <Loader className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-gray-500">Cargando datos del curso...</p>
         </div>
       </div>
     );
@@ -172,23 +172,23 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
   const bookContent = `<h2>La Historia de ${courseData?.name || 'Curso'}</h2>`;
 
   return (
-    <div className="min-h-screen bg-[#111111] p-8">
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <button
           onClick={() => onNavigate?.('dashboard')}
-          className="text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors"
+          className="text-blue-600 hover:text-blue-700 flex items-center gap-2 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver al Dashboard
         </button>
 
-        <div className="flex gap-4 border-b border-white/10">
+        <div className="flex gap-4 border-b border-gray-200">
           <button
             onClick={() => setShowBook(false)}
             className={`px-4 py-3 font-bold transition-colors ${
               !showBook
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-neutral-400 hover:text-white'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             Narrativa del Curso
@@ -197,8 +197,8 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
             onClick={() => setShowBook(true)}
             className={`px-4 py-3 font-bold transition-colors ${
               showBook
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-neutral-400 hover:text-white'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             Libro Digital
