@@ -77,11 +77,11 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-4 md:p-8 space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-white tracking-tight text-sans">Directorio de Alumnos</h2>
-          <p className="text-neutral-400">Gestiona perfiles, seguimiento e intervenciones.</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight text-sans">Directorio de Alumnos</h2>
+          <p className="text-gray-500">Gestiona perfiles, seguimiento e intervenciones.</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -94,7 +94,7 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
           </button>
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-6 py-3 bg-[#111111] border border-white/10 rounded-2xl font-bold text-neutral-300 hover:bg-[#1a1a1a] flex items-center justify-center gap-2 transition-all shadow-sm"
+            className="px-6 py-3 bg-white border border-gray-300 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-all shadow-sm"
           >
             <Upload className="w-5 h-5" />
             Importar CSV
@@ -112,16 +112,16 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
       {/* Filters & Search */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 w-5 h-5" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="Buscar por nombre o RUT..."
-            className="w-full pl-12 pr-4 py-3 bg-[#111111]/80 backdrop-blur-md border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm text-white placeholder:text-neutral-600"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm text-gray-900 placeholder:text-gray-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="px-6 py-3 bg-[#111111] border border-white/10 rounded-2xl font-bold text-neutral-300 hover:bg-[#1a1a1a] flex items-center justify-center gap-2 transition-all shadow-sm">
+        <button className="px-6 py-3 bg-white border border-gray-300 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-all shadow-sm">
           <Filter className="w-5 h-5" />
           Filtros
         </button>
@@ -130,14 +130,14 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
       {/* Student List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredStudents.map((student) => (
-          <div key={student.id} className="bg-[#111111]/80 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-sm hover:shadow-md hover:border-white/20 transition-all group relative overflow-hidden">
+          <div key={student.id} className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all group relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-32 h-32 opacity-20 blur-3xl -mr-16 -mt-16 rounded-full ${
               student.riskStatus === RiskStatus.RED ? 'bg-red-500' :
               student.riskStatus === RiskStatus.YELLOW ? 'bg-amber-500' : 'bg-emerald-500'
             }`}></div>
 
             <div className="flex items-start justify-between mb-4 relative z-10">
-              <div className="h-16 w-16 bg-[#1a1a1a] border-2 border-white/10 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden text-2xl font-bold text-neutral-400">
+              <div className="h-16 w-16 bg-gray-100 border-2 border-gray-200 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden text-2xl font-bold text-gray-500">
                 {student.photoUrl ? <img src={student.photoUrl} alt="" className="w-full h-full object-cover" /> : student.name[0]}
               </div>
               <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
@@ -149,11 +149,11 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
             </div>
 
             <div className="mb-6 relative z-10">
-              <button onClick={() => openProfileModal(student)} className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors uppercase font-display text-left">
+              <button onClick={() => openProfileModal(student)} className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors uppercase font-display text-left">
                 {student.name}
               </button>
-              <p className="text-xs text-neutral-500 font-mono tracking-tighter">RUT: {student.rut}</p>
-              {student.guardian1Name && <p className="text-xs text-neutral-400 mt-2 truncate">Apoderado: {student.guardian1Name}</p>}
+              <p className="text-xs text-gray-500 font-mono tracking-tighter">RUT: {student.rut}</p>
+              {student.guardian1Name && <p className="text-xs text-gray-600 mt-2 truncate">Apoderado: {student.guardian1Name}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3 relative z-10">
@@ -171,27 +171,27 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
               </button>
               <button
                 onClick={() => openProfileModal(student)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-white/5 text-neutral-300 rounded-xl font-bold text-xs hover:bg-white/10 transition-colors border border-white/5"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition-colors border border-gray-200"
               >
                 <UserPlus className="w-4 h-4" />
                 Ver Detalle & Contacto
               </button>
             </div>
 
-            <button className="absolute top-4 right-4 p-2 text-neutral-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            <button className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
               <MoreVertical className="w-5 h-5" />
             </button>
           </div>
         ))}
 
         {filteredStudents.length === 0 && (
-          <div className="col-span-full py-20 text-center bg-[#111111]/50 rounded-3xl border-2 border-dashed border-white/10">
-            <UserPlus className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-neutral-400 uppercase tracking-widest font-mono">No hay estudiantes</h3>
-            <p className="text-neutral-500 mb-6">Comienza agregando tu primer alumno al curso.</p>
+          <div className="col-span-full py-20 text-center bg-gray-100 rounded-3xl border-2 border-dashed border-gray-300">
+            <UserPlus className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-500 uppercase tracking-widest font-mono">No hay estudiantes</h3>
+            <p className="text-gray-500 mb-6">Comienza agregando tu primer alumno al curso.</p>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all font-display focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#050505]"
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all font-display focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white"
             >
               Agrega tu primer alumno
             </button>
