@@ -157,7 +157,7 @@ export const StudentLife: React.FC<StudentLifeProps> = ({ onNavigate, studentId 
             onClick={() => setShowBook(false)}
             className={`px-4 py-3 font-bold transition-colors ${
               !showBook
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary border-b-2 border-primary'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -167,7 +167,7 @@ export const StudentLife: React.FC<StudentLifeProps> = ({ onNavigate, studentId 
             onClick={() => setShowBook(true)}
             className={`px-4 py-3 font-bold transition-colors ${
               showBook
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary border-b-2 border-primary'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
