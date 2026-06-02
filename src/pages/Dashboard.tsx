@@ -271,18 +271,18 @@ const Dashboard: React.FC = () => {
 
       {/* Report Modal */}
       {report && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-hidden">
-          <motion.div 
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md overflow-hidden">
+          <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-[#0A0A0A] w-full max-w-3xl h-[80vh] rounded-3xl p-8 shadow-2xl flex flex-col border border-white/10 relative overflow-hidden"
+            className="bg-white w-full max-w-3xl h-[80vh] rounded-3xl p-8 shadow-2xl flex flex-col border border-gray-200 relative overflow-hidden"
           >
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-white font-display">Análisis de IA</h3>
-              <button onClick={() => setReport(null)} className="text-neutral-500 hover:text-white font-bold font-mono text-sm transition-colors uppercase tracking-widest">Cerrar [ESC]</button>
+              <h3 className="text-2xl font-bold text-gray-900 font-display">Análisis de IA</h3>
+              <button onClick={() => setReport(null)} className="text-gray-400 hover:text-gray-600 font-bold font-mono text-sm transition-colors uppercase tracking-widest">Cerrar [ESC]</button>
             </div>
-            <div className="flex-1 overflow-auto prose prose-invert prose-blue max-w-none prose-p:text-neutral-300 prose-headings:text-white font-sans custom-scrollbar pr-4">
+            <div className="flex-1 overflow-auto prose prose-blue max-w-none prose-p:text-gray-600 prose-headings:text-gray-900 font-sans custom-scrollbar pr-4">
               <div dangerouslySetInnerHTML={{ __html: report.replace(/\n/g, '<br/>') }} />
             </div>
           </motion.div>
