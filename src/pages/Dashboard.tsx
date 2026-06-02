@@ -297,7 +297,7 @@ const Dashboard: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
             key={score.label} 
-            className={`bg-white p-6 rounded-2xl border ${score.border} shadow-sm hover:shadow-md transition-all duration-300 group`}
+            className={`bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group`}
           >
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${score.color} bg-primary/10 border border-primary/20 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300`}>
               <score.icon className="w-6 h-6" />
@@ -430,7 +430,7 @@ const Dashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           whileHover={{ scale: 1.02 }}
-          className="relative group p-8 rounded-2xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
+          className="relative group p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
             background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.1), transparent 50%)',
@@ -450,7 +450,7 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           whileHover={{ scale: 1.02 }}
-          className="relative group p-8 rounded-2xl bg-white border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
+          className="relative group p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-white border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
             background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(168, 85, 247, 0.1), transparent 50%)',
@@ -470,7 +470,7 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           whileHover={{ scale: 1.02 }}
-          className="relative group p-8 rounded-2xl bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
+          className="relative group p-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{
             background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(16, 185, 129, 0.1), transparent 50%)',
