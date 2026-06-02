@@ -34,7 +34,7 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
   stats = {
     totalStudents: 0,
     formResponsesCount: 0,
-    momentsCapured: [],
+    momentsCaptured: [],
   },
   allFormResponses = [],
   onExportBook,

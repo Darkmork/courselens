@@ -256,7 +256,7 @@ export const DigitalBook: React.FC<DigitalBookProps> = ({
   return (
     <div className="space-y-6">
       {/* Toolbar */}
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 flex gap-3 flex-wrap">
+      <div className="bg-gray-100 border border-gray-200 rounded-xl p-4 flex gap-3 flex-wrap">
         <button
           onClick={() => handleDownload('html')}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all flex items-center gap-2"
@@ -273,7 +273,7 @@ export const DigitalBook: React.FC<DigitalBookProps> = ({
         </button>
         <button
           onClick={handleCopy}
-          className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold rounded-lg transition-all flex items-center gap-2 ml-auto"
+          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ml-auto"
         >
           {copied ? (
             <>
@@ -290,7 +290,7 @@ export const DigitalBook: React.FC<DigitalBookProps> = ({
       </div>
 
       {/* Preview */}
-      <div ref={previewRef} className="border border-white/10 rounded-xl overflow-hidden bg-white">
+      <div ref={previewRef} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
         <iframe
           srcDoc={html}
           style={{
@@ -304,7 +304,7 @@ export const DigitalBook: React.FC<DigitalBookProps> = ({
       </div>
 
       {/* Info */}
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6 flex gap-3 items-start">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 flex gap-3 items-start">
         <Eye className="w-5 h-5 text-blue-400 flex-shrink-0 mt-1" />
         <div className="text-sm text-neutral-300">
           <p className="font-bold text-white mb-2">Vista Previa del Libro Digital</p>

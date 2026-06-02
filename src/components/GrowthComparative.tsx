@@ -56,14 +56,14 @@ export const GrowthComparative: React.FC<GrowthComparativeProps> = ({ responses 
         if (!firstData && !lastData) return null;
 
         return (
-          <div key={key} className="border border-white/10 rounded-lg overflow-hidden">
-            <div className="bg-white/5 px-4 py-3 font-bold text-white text-sm uppercase tracking-wider border-b border-white/10">
+          <div key={key} className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-3 font-bold text-gray-700 text-sm uppercase tracking-wider border-b border-gray-200">
               {label}
             </div>
             <div className="grid grid-cols-2 divide-x divide-white/10">
               {/* Left side - First response */}
               <div className="p-4 space-y-2">
-                <div className="text-xs text-neutral-400 font-mono mb-3">
+                <div className="text-xs text-gray-500 mb-3">
                   {new Date(first.timestamp).toLocaleDateString('es-CL')}
                 </div>
                 {firstData ? (
@@ -71,7 +71,7 @@ export const GrowthComparative: React.FC<GrowthComparativeProps> = ({ responses 
                     value !== undefined && value !== null && (
                       <div key={fieldKey} className="text-xs">
                         <div className="text-neutral-400 font-mono">{fieldKey.replace(/_/g, ' ')}</div>
-                        <div className="text-neutral-200">{formatValue(value)}</div>
+                        <div className="text-gray-700">{formatValue(value)}</div>
                       </div>
                     )
                   ))
@@ -82,7 +82,7 @@ export const GrowthComparative: React.FC<GrowthComparativeProps> = ({ responses 
 
               {/* Right side - Last response */}
               <div className="p-4 space-y-2">
-                <div className="text-xs text-neutral-400 font-mono mb-3">
+                <div className="text-xs text-gray-500 mb-3">
                   {new Date(last.timestamp).toLocaleDateString('es-CL')}
                 </div>
                 {lastData ? (
@@ -93,7 +93,7 @@ export const GrowthComparative: React.FC<GrowthComparativeProps> = ({ responses 
                         <div key={fieldKey} className="text-xs flex justify-between items-start gap-2">
                           <div>
                             <div className="text-neutral-400 font-mono">{fieldKey.replace(/_/g, ' ')}</div>
-                            <div className="text-neutral-200">{formatValue(value)}</div>
+                            <div className="text-gray-700">{formatValue(value)}</div>
                           </div>
                           {getChangeIndicator(prevValue, value)}
                         </div>
