@@ -59,8 +59,8 @@ export function YearSelector({
             onClick={() => onYearChange(year)}
             className={`px-4 py-2 rounded font-medium transition ${
               selectedYear === year
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary-100 text-primary'
+                : 'text-gray-500 hover:bg-gray-200'
             }`}
             aria-label={`Año ${year}`}
             aria-pressed={selectedYear === year}
