@@ -213,7 +213,7 @@ export const CourseLife: React.FC<CourseLifeProps> = ({
             stats={{
               totalStudents: students.length,
               formResponsesCount: stats.formResponsesCount,
-              momentsCapured: stats.momentsCaptured,
+              momentsCaptured: stats.momentsCaptured,
               cohesionScore: stats.cohesionScore,
               leadershipScore: stats.leadershipScore,
               emotionalWellness: stats.emotionalWellness,

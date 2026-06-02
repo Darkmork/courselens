@@ -12,7 +12,7 @@ interface StudentData {
 interface CourseStats {
   totalStudents: number;
   formResponsesCount: number;
-  momentsCapured: string[];
+  momentsCaptured: string[];
   cohesionScore?: number;
   leadershipScore?: number;
   emotionalWellness?: number;
@@ -86,7 +86,7 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
       mediados_III_medio: '⚡ Mediados',
       inicio_IV_medio: '🎯 Final',
     };
-    return stats.momentsCapured
+    return stats.momentsCaptured
       .map(m => moments[m as keyof typeof moments])
       .join(' → ');
   };
@@ -103,7 +103,7 @@ export const CourseNarrative: React.FC<CourseNarrativeProps> = ({
             </p>
 
             {/* Progress Timeline */}
-            {stats.momentsCapured.length > 0 && (
+            {stats.momentsCaptured.length > 0 && (
               <div className="inline-block bg-black/40 border border-white/10 rounded-lg px-4 py-2">
                 <p className="text-sm text-neutral-300 font-mono">
                   {getMomentProgress()}
