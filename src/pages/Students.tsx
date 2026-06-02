@@ -101,7 +101,7 @@ const Students: React.FC<StudentsProps> = ({ onNavigate }) => {
           </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
           >
             <UserPlus className="w-5 h-5" />
             Agregar
